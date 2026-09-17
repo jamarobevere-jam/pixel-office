@@ -16,6 +16,18 @@ objects:
   - {type: plant, x: 2, y: 27}
   - {type: plant, x: 37, y: 27}
   - {type: plant, x: 20, y: 27}
+  # water dispensers
+  - {type: water_dispenser, x: 1, y: 15}
+  - {type: water_dispenser, x: 38, y: 15}
+  # trash cans, here and there
+  - {type: trash_empty, x: 6, y: 10}
+  - {type: trash_full, x: 16, y: 18}
+  - {type: trash_empty, x: 26, y: 10}
+  - {type: trash_full, x: 31, y: 26}
+  # loose papers, here and there
+  - {type: papers, x: 12, y: 11}
+  - {type: papers, x: 22, y: 19}
+  - {type: papers, x: 33, y: 11}
   # desks: 7 columns x 3 rows, indices 0-20 matching people.yaml `desk` field
   - {type: desk, x: 4, y: 6}
   - {type: desk, x: 9, y: 6}

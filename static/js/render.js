@@ -4,8 +4,6 @@ const statusEl = document.getElementById("status");
 
 const COLORS = {
   floor: "#d9c9a3",
-  desk: "#8b5e34",
-  plant: "#3f7a3f",
   window: "#bcd8f0",
 };
 
@@ -24,6 +22,52 @@ function getSpriteImage(filename) {
   return img;
 }
 
+// Furniture is a small fixed set, preloaded eagerly so the offscreen
+// floorplan (drawn once) doesn't race image decode.
+const FURNITURE_FILES = {
+  deskLeft: "desk_left.png",
+  deskRight: "desk_right.png",
+  keyboardMouse: "keyboard_mouse_black.png",
+  plant: "plant.png",
+  waterDispenser: "Water_dispenser.png",
+  trashEmpty: "trash_can_empty.png",
+  trashFull: "trash_can_full.png",
+  papers: "messy_papers.png",
+};
+const MONITOR_FILES = ["Monitor1_B.png", "Monitor1_F.png", "Monitor3_off_F.png", "Monitor3_on_F.png"];
+
+const furnitureImages = {};
+let furnitureReady = false;
+
+function loadImage(src) {
+  return new Promise((resolve) => {
+    const img = new Image();
+    img.onload = () => resolve(img);
+    img.onerror = () => resolve(img); // degrade gracefully, don't block forever
+    img.src = src;
+  });
+}
+
+async function preloadFurniture() {
+  const entries = Object.entries(FURNITURE_FILES);
+  const monitorEntries = MONITOR_FILES.map((f) => [f, f]);
+  const all = [...entries, ...monitorEntries];
+  const loaded = await Promise.all(all.map(([, file]) => loadImage(`/static/assets/furniture/${file}`)));
+  all.forEach(([key], i) => {
+    furnitureImages[key] = loaded[i];
+  });
+  furnitureReady = true;
+  cachedFloorplan = null; // force one offscreen redraw now that images are ready
+}
+preloadFurniture();
+
+// Deterministic pick so a desk's monitor variant stays stable across redraws.
+function pickMonitor(x, y) {
+  const hash = (x * 73856093) ^ (y * 19349663);
+  const index = Math.abs(hash) % MONITOR_FILES.length;
+  return furnitureImages[MONITOR_FILES[index]];
+}
+
 let previousState = null;
 let latestState = null;
 let latestReceivedAt = null;
@@ -38,14 +82,67 @@ function drawFloorplanToOffscreen(floorplan) {
   floorplanCanvas.height = floorplan.height * floorplan.tile_size;
   floorplanCtx = floorplanCanvas.getContext("2d");
 
+  const tile = floorplan.tile_size;
+
   floorplanCtx.fillStyle = COLORS.floor;
   floorplanCtx.fillRect(0, 0, floorplanCanvas.width, floorplanCanvas.height);
 
+  // Bottom-anchored: an image taller than one tile (plants, water dispenser)
+  // is drawn so its bottom edge sits on the tile's bottom edge, growing
+  // upward, matching how these assets are authored.
+  function drawBottomAnchored(img, x, y) {
+    if (!img || !img.naturalWidth) return;
+    const drawY = y * tile + tile - img.naturalHeight;
+    floorplanCtx.drawImage(img, x * tile, drawY);
+  }
+
+  function drawTile(img, x, y) {
+    if (!img || !img.naturalWidth) return;
+    floorplanCtx.drawImage(img, x * tile, y * tile);
+  }
+
   for (const obj of floorplan.objects) {
-    const px = obj.x * floorplan.tile_size;
-    const py = obj.y * floorplan.tile_size;
-    floorplanCtx.fillStyle = COLORS[obj.type] || "#999999";
-    floorplanCtx.fillRect(px, py, floorplan.tile_size, floorplan.tile_size);
+    const px = obj.x * tile;
+    const py = obj.y * tile;
+
+    if (!furnitureReady) {
+      // First paint before furniture images finish loading: flat rects so
+      // the scene isn't blank; preloadFurniture() triggers a real redraw.
+      floorplanCtx.fillStyle = obj.type === "window" ? COLORS.window : "#999999";
+      floorplanCtx.fillRect(px, py, tile, tile);
+      continue;
+    }
+
+    switch (obj.type) {
+      case "window":
+        floorplanCtx.fillStyle = COLORS.window;
+        floorplanCtx.fillRect(px, py, tile, tile);
+        break;
+      case "desk":
+        drawTile(furnitureImages.deskLeft, obj.x, obj.y);
+        drawTile(furnitureImages.deskRight, obj.x + 1, obj.y);
+        drawTile(pickMonitor(obj.x, obj.y), obj.x + 1, obj.y);
+        drawTile(furnitureImages.keyboardMouse, obj.x, obj.y);
+        break;
+      case "plant":
+        drawBottomAnchored(furnitureImages.plant, obj.x, obj.y);
+        break;
+      case "water_dispenser":
+        drawBottomAnchored(furnitureImages.waterDispenser, obj.x, obj.y);
+        break;
+      case "trash_empty":
+        drawTile(furnitureImages.trashEmpty, obj.x, obj.y);
+        break;
+      case "trash_full":
+        drawTile(furnitureImages.trashFull, obj.x, obj.y);
+        break;
+      case "papers":
+        drawTile(furnitureImages.papers, obj.x, obj.y);
+        break;
+      default:
+        floorplanCtx.fillStyle = "#999999";
+        floorplanCtx.fillRect(px, py, tile, tile);
+    }
   }
 
   cachedFloorplan = floorplan;
