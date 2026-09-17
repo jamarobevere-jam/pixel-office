@@ -186,9 +186,11 @@ function lerp(a, b, t) {
   return a + (b - a) * t;
 }
 
-const BUBBLE_HEIGHT = 16;
-const BUBBLE_PADDING = 4;
+const BUBBLE_HEIGHT = 18;
+const BUBBLE_PADDING = 6;
 const BUBBLE_GAP = 4; // enforced clearance between stacked bubbles
+const BUBBLE_BORDER = 2;
+const TAIL_STEP = 4;
 
 function bubbleRectsOverlap(a, b) {
   return !(
@@ -197,6 +199,29 @@ function bubbleRectsOverlap(a, b) {
     a.bottom < b.top - BUBBLE_GAP ||
     a.top > b.bottom + BUBBLE_GAP
   );
+}
+
+// Pixel-art style bubble: hard-edged white fill, a thick black border drawn
+// as inset strips (avoids canvas stroke's anti-aliasing), and a 3-step
+// staircase tail hanging off the bottom edge toward the speaker.
+function drawPixelBubble(left, top, width, height, tailX) {
+  ctx.fillStyle = "#ffffff";
+  ctx.fillRect(left, top, width, height);
+
+  ctx.fillStyle = "#000000";
+  ctx.fillRect(left, top, width, BUBBLE_BORDER); // top
+  ctx.fillRect(left, top + height - BUBBLE_BORDER, width, BUBBLE_BORDER); // bottom
+  ctx.fillRect(left, top, BUBBLE_BORDER, height); // left
+  ctx.fillRect(left + width - BUBBLE_BORDER, top, BUBBLE_BORDER, height); // right
+
+  const tx = Math.max(left + TAIL_STEP * 3, Math.min(tailX, left + width - TAIL_STEP));
+  let sx = tx;
+  let sy = top + height - BUBBLE_BORDER;
+  for (let i = 0; i < 3; i++) {
+    ctx.fillRect(sx - TAIL_STEP, sy, TAIL_STEP, TAIL_STEP);
+    sx -= TAIL_STEP;
+    sy += TAIL_STEP;
+  }
 }
 
 // Nearby people (especially mid-conversation) can have overlapping bubble
@@ -222,10 +247,9 @@ function layoutAndDrawBubbles(candidates) {
       bubbleY -= BUBBLE_HEIGHT + BUBBLE_GAP;
     }
 
-    ctx.fillStyle = "#ffffff";
-    ctx.fillRect(c.x - halfWidth, bubbleY - 12, halfWidth * 2, BUBBLE_HEIGHT);
+    drawPixelBubble(c.x - halfWidth, bubbleY - 12, halfWidth * 2, BUBBLE_HEIGHT, c.x);
     ctx.fillStyle = "#000000";
-    ctx.font = "10px monospace";
+    ctx.font = "bold 10px monospace";
     ctx.textAlign = "center";
     ctx.fillText(c.text, c.x, bubbleY);
   }
