@@ -186,7 +186,54 @@ function lerp(a, b, t) {
   return a + (b - a) * t;
 }
 
+const BUBBLE_HEIGHT = 16;
+const BUBBLE_PADDING = 4;
+const BUBBLE_GAP = 4; // enforced clearance between stacked bubbles
+
+function bubbleRectsOverlap(a, b) {
+  return !(
+    a.right < b.left - BUBBLE_GAP ||
+    a.left > b.right + BUBBLE_GAP ||
+    a.bottom < b.top - BUBBLE_GAP ||
+    a.top > b.bottom + BUBBLE_GAP
+  );
+}
+
+// Nearby people (especially mid-conversation) can have overlapping bubble
+// rects at their natural anchor position; push a colliding bubble straight
+// up, one bubble-height at a time, until it clears every bubble already
+// placed this frame.
+function layoutAndDrawBubbles(candidates) {
+  const placedRects = [];
+  for (const c of candidates) {
+    let bubbleY = c.anchorY;
+    const halfWidth = c.width / 2 + BUBBLE_PADDING;
+    for (let attempt = 0; attempt < 20; attempt++) {
+      const rect = {
+        left: c.x - halfWidth,
+        right: c.x + halfWidth,
+        top: bubbleY - 12,
+        bottom: bubbleY - 12 + BUBBLE_HEIGHT,
+      };
+      if (!placedRects.some((r) => bubbleRectsOverlap(rect, r))) {
+        placedRects.push(rect);
+        break;
+      }
+      bubbleY -= BUBBLE_HEIGHT + BUBBLE_GAP;
+    }
+
+    ctx.fillStyle = "#ffffff";
+    ctx.fillRect(c.x - halfWidth, bubbleY - 12, halfWidth * 2, BUBBLE_HEIGHT);
+    ctx.fillStyle = "#000000";
+    ctx.font = "10px monospace";
+    ctx.textAlign = "center";
+    ctx.fillText(c.text, c.x, bubbleY);
+  }
+}
+
 function drawPeople(people, factor, prevPeopleByName) {
+  const bubbleCandidates = [];
+
   for (const person of people) {
     let x = person.x;
     let y = person.y;
@@ -207,14 +254,16 @@ function drawPeople(people, factor, prevPeopleByName) {
     ctx.fillText(person.name, x, y - SPRITE_SIZE / 2 - 4);
 
     if (person.phrase) {
-      const bubbleY = y - SPRITE_SIZE / 2 - 20;
-      ctx.fillStyle = "#ffffff";
-      const textWidth = ctx.measureText(person.phrase).width;
-      ctx.fillRect(x - textWidth / 2 - 4, bubbleY - 12, textWidth + 8, 16);
-      ctx.fillStyle = "#000000";
-      ctx.fillText(person.phrase, x, bubbleY);
+      bubbleCandidates.push({
+        x,
+        anchorY: y - SPRITE_SIZE / 2 - 20,
+        text: person.phrase,
+        width: ctx.measureText(person.phrase).width,
+      });
     }
   }
+
+  layoutAndDrawBubbles(bubbleCandidates);
 }
 
 function render() {
