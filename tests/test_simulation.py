@@ -44,6 +44,25 @@ def test_at_desk_person_eventually_starts_walking():
     assert p.target_x is not None or p.state == "walking" or p.state == "at_desk"
 
 
+def test_at_desk_person_picks_walk_target_off_blocked_tiles():
+    # desks at (0,0) and (5,0) block (0,0)/(1,0)/(1,1) and (5,0)/(6,0)/(6,1)
+    p = make_person("A", 16, 16)
+    sim = Simulation(
+        people=[p], floorplan=make_floorplan(), interactions=[],
+        rng=random.Random(2),
+    )
+    blocked = make_floorplan().blocked_tiles()
+    tile = 32
+    for i in range(300):
+        sim.tick(now=0.1 * i, dt=0.1)
+        if p.state == "walking":
+            tx = int(p.target_x // tile)
+            ty = int(p.target_y // tile)
+            assert (tx, ty) not in blocked
+            return
+    raise AssertionError("person never started walking within the tick budget")
+
+
 def test_walking_person_moves_toward_target_and_arrives():
     p = make_person("A", 0, 0, state="walking")
     p.target_x = 100.0

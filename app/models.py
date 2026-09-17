@@ -18,6 +18,18 @@ class Floorplan:
     def desks(self) -> list[WorldObject]:
         return [o for o in self.objects if o.type == "desk"]
 
+    def blocked_tiles(self) -> set[tuple[int, int]]:
+        """Tiles occupied by furniture people shouldn't walk through."""
+        blocked: set[tuple[int, int]] = set()
+        for obj in self.objects:
+            if obj.type == "desk":
+                blocked.add((obj.x, obj.y))
+                blocked.add((obj.x + 1, obj.y))
+                blocked.add((obj.x + 1, obj.y + 1))  # chair
+            elif obj.type in ("plant", "water_dispenser", "window"):
+                blocked.add((obj.x, obj.y))
+        return blocked
+
 
 @dataclass
 class Person:

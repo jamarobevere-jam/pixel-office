@@ -25,6 +25,14 @@ class Simulation:
         self._idle_until: dict[str, float] = {}
         self._talk_until: dict[str, float] = {}
 
+        blocked = floorplan.blocked_tiles()
+        self._walkable_tiles = [
+            (x, y)
+            for x in range(floorplan.width)
+            for y in range(floorplan.height)
+            if (x, y) not in blocked
+        ]
+
     def tick(self, now: float, dt: float) -> None:
         for person in self.people:
             if person.state == "at_desk":
@@ -53,8 +61,10 @@ class Simulation:
             return
         if now >= idle_until:
             del self._idle_until[person.name]
-            person.target_x = self.rng.uniform(0, self.floorplan.width * self.floorplan.tile_size)
-            person.target_y = self.rng.uniform(0, self.floorplan.height * self.floorplan.tile_size)
+            tile_size = self.floorplan.tile_size
+            tx, ty = self.rng.choice(self._walkable_tiles)
+            person.target_x = tx * tile_size + tile_size / 2
+            person.target_y = ty * tile_size + tile_size / 2
             person.state = "walking"
 
     def _tick_walking(self, person: Person, dt: float, now: float) -> None:
