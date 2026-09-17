@@ -1,0 +1,40 @@
+grid:
+  width: 40
+  height: 30
+  tile_size: 32
+objects:
+  # windows along top wall (y=0)
+  - {type: window, x: 4, y: 0}
+  - {type: window, x: 10, y: 0}
+  - {type: window, x: 16, y: 0}
+  - {type: window, x: 22, y: 0}
+  - {type: window, x: 28, y: 0}
+  - {type: window, x: 34, y: 0}
+  # plants scattered
+  - {type: plant, x: 2, y: 2}
+  - {type: plant, x: 37, y: 2}
+  - {type: plant, x: 2, y: 27}
+  - {type: plant, x: 37, y: 27}
+  - {type: plant, x: 20, y: 27}
+  # desks: 7 columns x 3 rows, indices 0-20 matching people.yaml `desk` field
+  - {type: desk, x: 4, y: 6}
+  - {type: desk, x: 9, y: 6}
+  - {type: desk, x: 14, y: 6}
+  - {type: desk, x: 19, y: 6}
+  - {type: desk, x: 24, y: 6}
+  - {type: desk, x: 29, y: 6}
+  - {type: desk, x: 34, y: 6}
+  - {type: desk, x: 4, y: 14}
+  - {type: desk, x: 9, y: 14}
+  - {type: desk, x: 14, y: 14}
+  - {type: desk, x: 19, y: 14}
+  - {type: desk, x: 24, y: 14}
+  - {type: desk, x: 29, y: 14}
+  - {type: desk, x: 34, y: 14}
+  - {type: desk, x: 4, y: 22}
+  - {type: desk, x: 9, y: 22}
+  - {type: desk, x: 14, y: 22}
+  - {type: desk, x: 19, y: 22}
+  - {type: desk, x: 24, y: 22}
+  - {type: desk, x: 29, y: 22}
+  - {type: desk, x: 34, y: 22}

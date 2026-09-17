@@ -1,0 +1,11 @@
+# Each entry is a [line_a, line_b] pair used when two idle people become
+# proximate. Not tied to specific people — assigned randomly at runtime.
+exchanges:
+  - ["Did you see the CRM sync fail again?", "Classic."]
+  - ["Are you on the call?", "What call?"]
+  - ["Coffee?", "Always."]
+  - ["Is it deployed yet?", "It's building."]
+  - ["Who broke the pipeline?", "Not me this time."]
+  - ["Got five minutes?", "For you, always."]
+  - ["Did you push your changes?", "Pushing now."]
+  - ["Standup in five.", "Already forgot what I did yesterday."]
