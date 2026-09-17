@@ -37,6 +37,7 @@ const FURNITURE_FILES = {
 };
 const MONITOR_FILES = ["Monitor1_B.png", "Monitor1_F.png", "Monitor3_off_F.png", "Monitor3_on_F.png"];
 const MONITOR_LIFT = 20; // px shifted up so the monitor sits on the desk surface
+const CHAIR_LIFT = 14; // px shifted up so the chair tucks under the monitor's tile
 
 const furnitureImages = {};
 let furnitureReady = false;
@@ -127,7 +128,10 @@ function drawFloorplanToOffscreen(floorplan) {
         floorplanCtx.fillRect(px, py, tile, tile);
         break;
       case "desk": {
-        drawTile(furnitureImages.chair, obj.x, obj.y + 1);
+        const chair = furnitureImages.chair;
+        if (chair && chair.naturalWidth) {
+          floorplanCtx.drawImage(chair, (obj.x + 1) * tile, (obj.y + 1) * tile - CHAIR_LIFT);
+        }
         drawTile(furnitureImages.deskLeft, obj.x, obj.y);
         drawTile(furnitureImages.deskRight, obj.x + 1, obj.y);
         const monitor = pickMonitor(obj.x, obj.y);
