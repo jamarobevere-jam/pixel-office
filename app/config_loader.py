@@ -39,6 +39,7 @@ def load_people(path: str, floorplan: Floorplan) -> list[Person]:
     data = _load_yaml(path)
     desks = floorplan.desks()
     people = []
+    seen_names: set[str] = set()
     try:
         for entry in data["people"]:
             desk_index = entry["desk"]
@@ -47,12 +48,18 @@ def load_people(path: str, floorplan: Floorplan) -> list[Person]:
                     f"Person '{entry.get('name')}' has invalid desk index "
                     f"{desk_index}; floorplan has {len(desks)} desks"
                 )
+            name = entry["name"]
+            if name in seen_names:
+                raise ConfigError(
+                    f"Duplicate person name '{name}' in {path}; names must be unique"
+                )
+            seen_names.add(name)
             desk_obj = desks[desk_index]
             cx = desk_obj.x * floorplan.tile_size + floorplan.tile_size / 2
             cy = desk_obj.y * floorplan.tile_size + floorplan.tile_size / 2
             people.append(
                 Person(
-                    name=entry["name"],
+                    name=name,
                     sprite=entry["sprite"],
                     desk=desk_index,
                     idle_phrases=list(entry["idle_phrases"]),
@@ -65,8 +72,8 @@ def load_people(path: str, floorplan: Floorplan) -> list[Person]:
                     phrase_expires_at=None,
                 )
             )
-    except KeyError as e:
-        raise ConfigError(f"Malformed people config {path}: missing {e}") from e
+    except (KeyError, TypeError) as e:
+        raise ConfigError(f"Malformed people config {path}: {e}") from e
     return people
 
 

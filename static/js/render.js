@@ -9,56 +9,104 @@ const COLORS = {
   window: "#bcd8f0",
 };
 
-let latestState = null;
-let floorplanDrawn = false;
+const TICK_INTERVAL_MS = 100; // matches server's ~10Hz tick rate
 
-function drawFloorplan(floorplan) {
-  canvas.width = floorplan.width * floorplan.tile_size;
-  canvas.height = floorplan.height * floorplan.tile_size;
-  ctx.fillStyle = COLORS.floor;
-  ctx.fillRect(0, 0, canvas.width, canvas.height);
+let previousState = null;
+let latestState = null;
+let latestReceivedAt = null;
+
+let floorplanCanvas = null;
+let floorplanCtx = null;
+let cachedFloorplan = null;
+
+function drawFloorplanToOffscreen(floorplan) {
+  floorplanCanvas = document.createElement("canvas");
+  floorplanCanvas.width = floorplan.width * floorplan.tile_size;
+  floorplanCanvas.height = floorplan.height * floorplan.tile_size;
+  floorplanCtx = floorplanCanvas.getContext("2d");
+
+  floorplanCtx.fillStyle = COLORS.floor;
+  floorplanCtx.fillRect(0, 0, floorplanCanvas.width, floorplanCanvas.height);
 
   for (const obj of floorplan.objects) {
     const px = obj.x * floorplan.tile_size;
     const py = obj.y * floorplan.tile_size;
-    ctx.fillStyle = COLORS[obj.type] || "#999999";
-    ctx.fillRect(px, py, floorplan.tile_size, floorplan.tile_size);
+    floorplanCtx.fillStyle = COLORS[obj.type] || "#999999";
+    floorplanCtx.fillRect(px, py, floorplan.tile_size, floorplan.tile_size);
+  }
+
+  cachedFloorplan = floorplan;
+
+  if (canvas.width !== floorplanCanvas.width || canvas.height !== floorplanCanvas.height) {
+    canvas.width = floorplanCanvas.width;
+    canvas.height = floorplanCanvas.height;
   }
 }
 
-function drawPeople(people) {
+function floorplanChanged(floorplan) {
+  if (!cachedFloorplan) return true;
+  if (
+    cachedFloorplan.width !== floorplan.width ||
+    cachedFloorplan.height !== floorplan.height ||
+    cachedFloorplan.tile_size !== floorplan.tile_size
+  ) {
+    return true;
+  }
+  return JSON.stringify(cachedFloorplan.objects) !== JSON.stringify(floorplan.objects);
+}
+
+function lerp(a, b, t) {
+  return a + (b - a) * t;
+}
+
+function drawPeople(people, factor, prevPeopleByName) {
   for (const person of people) {
+    let x = person.x;
+    let y = person.y;
+    const prev = prevPeopleByName ? prevPeopleByName.get(person.name) : null;
+    if (prev) {
+      x = lerp(prev.x, person.x, factor);
+      y = lerp(prev.y, person.y, factor);
+    }
+
     ctx.fillStyle = person.state === "talking" ? "#f0a500" : "#2b6cb0";
     ctx.beginPath();
-    ctx.arc(person.x, person.y, 10, 0, Math.PI * 2);
+    ctx.arc(x, y, 10, 0, Math.PI * 2);
     ctx.fill();
 
     ctx.fillStyle = "#ffffff";
     ctx.font = "10px monospace";
     ctx.textAlign = "center";
-    ctx.fillText(person.name, person.x, person.y - 14);
+    ctx.fillText(person.name, x, y - 14);
 
     if (person.phrase) {
-      const bubbleY = person.y - 30;
+      const bubbleY = y - 30;
       ctx.fillStyle = "#ffffff";
       const textWidth = ctx.measureText(person.phrase).width;
-      ctx.fillRect(person.x - textWidth / 2 - 4, bubbleY - 12, textWidth + 8, 16);
+      ctx.fillRect(x - textWidth / 2 - 4, bubbleY - 12, textWidth + 8, 16);
       ctx.fillStyle = "#000000";
-      ctx.fillText(person.phrase, person.x, bubbleY);
+      ctx.fillText(person.phrase, x, bubbleY);
     }
   }
 }
 
 function render() {
   if (latestState) {
-    if (!floorplanDrawn) {
-      // floor/desks/plants/windows are static; redraw each frame is cheap
-      // enough at this scale (21 people, ~1200 tiles) so no offscreen
-      // caching is needed for v1.
-      floorplanDrawn = true;
+    if (floorplanChanged(latestState.floorplan)) {
+      drawFloorplanToOffscreen(latestState.floorplan);
     }
-    drawFloorplan(latestState.floorplan);
-    drawPeople(latestState.people);
+
+    ctx.drawImage(floorplanCanvas, 0, 0);
+
+    let factor = 1;
+    let prevPeopleByName = null;
+    if (previousState && latestReceivedAt !== null) {
+      const elapsed = performance.now() - latestReceivedAt;
+      factor = Math.min(1, Math.max(0, elapsed / TICK_INTERVAL_MS));
+      prevPeopleByName = new Map(previousState.people.map((p) => [p.name, p]));
+    }
+
+    drawPeople(latestState.people, factor, prevPeopleByName);
   }
   requestAnimationFrame(render);
 }
@@ -72,7 +120,9 @@ function connect() {
   };
 
   ws.onmessage = (event) => {
+    previousState = latestState;
     latestState = JSON.parse(event.data);
+    latestReceivedAt = performance.now();
   };
 
   ws.onclose = () => {

@@ -43,6 +43,25 @@ people:
       - "Hello Hello"
 """
 
+PEOPLE_YAML_MALFORMED_ENTRY = """
+people:
+  - "just a string, not a mapping"
+"""
+
+PEOPLE_YAML_DUPLICATE_NAMES = """
+people:
+  - name: Sebastian
+    sprite: sprite_01.png
+    desk: 0
+    idle_phrases:
+      - "Hello Hello"
+  - name: Sebastian
+    sprite: sprite_02.png
+    desk: 1
+    idle_phrases:
+      - "It works on my machine"
+"""
+
 INTERACTIONS_YAML = """
 exchanges:
   - ["Coffee?", "Always."]
@@ -83,6 +102,42 @@ def test_load_people_raises_on_bad_desk_index(tmp_path):
 
     people_path = tmp_path / "people.yaml"
     people_path.write_text(PEOPLE_YAML_BAD_DESK)
+
+    with pytest.raises(ConfigError):
+        load_people(str(people_path), fp)
+
+
+def test_load_people_raises_config_error_on_empty_file(tmp_path):
+    fp_path = tmp_path / "floorplan.yaml"
+    fp_path.write_text(FLOORPLAN_YAML)
+    fp = load_floorplan(str(fp_path))
+
+    people_path = tmp_path / "people.yaml"
+    people_path.write_text("")  # yaml.safe_load("") -> None
+
+    with pytest.raises(ConfigError):
+        load_people(str(people_path), fp)
+
+
+def test_load_people_raises_config_error_on_malformed_entry(tmp_path):
+    fp_path = tmp_path / "floorplan.yaml"
+    fp_path.write_text(FLOORPLAN_YAML)
+    fp = load_floorplan(str(fp_path))
+
+    people_path = tmp_path / "people.yaml"
+    people_path.write_text(PEOPLE_YAML_MALFORMED_ENTRY)
+
+    with pytest.raises(ConfigError):
+        load_people(str(people_path), fp)
+
+
+def test_load_people_raises_on_duplicate_names(tmp_path):
+    fp_path = tmp_path / "floorplan.yaml"
+    fp_path.write_text(FLOORPLAN_YAML)
+    fp = load_floorplan(str(fp_path))
+
+    people_path = tmp_path / "people.yaml"
+    people_path.write_text(PEOPLE_YAML_DUPLICATE_NAMES)
 
     with pytest.raises(ConfigError):
         load_people(str(people_path), fp)

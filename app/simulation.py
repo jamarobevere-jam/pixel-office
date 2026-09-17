@@ -26,7 +26,6 @@ class Simulation:
         self._talk_until: dict[str, float] = {}
 
     def tick(self, now: float, dt: float) -> None:
-        self._now = now
         for person in self.people:
             if person.state == "at_desk":
                 self._tick_at_desk(person, now)

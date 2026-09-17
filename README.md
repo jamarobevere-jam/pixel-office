@@ -22,8 +22,22 @@ Edit `data/people.yaml`, `data/floorplan.yaml`, or `data/interactions.yaml`
 
 ## Deploy to Azure App Service
 
-    docker build -t pixel-office .
-    az webapp up --name <app-name> --resource-group <rg> --sku B1 --runtime "PYTHON:3.11"
+Build the image, push it to Azure Container Registry (ACR), and point an
+App Service (Linux, container) at it:
 
-Or push the built image to Azure Container Registry and point an App
-Service (Linux, container) at it, exposing port 8000.
+    docker build -t pixel-office .
+    az acr build --registry <acr-name> --image pixel-office:latest .
+
+    az webapp create --name <app-name> --resource-group <rg> --plan <plan> \
+      --deployment-container-image-name <acr-name>.azurecr.io/pixel-office:latest
+
+Then set two app settings that are easy to miss:
+
+    az webapp config appsettings set --name <app-name> --resource-group <rg> \
+      --settings WEBSITES_PORT=8000
+
+`WEBSITES_PORT=8000` tells Azure's health probe which port the container
+listens on (it otherwise defaults to port 80 and the app never comes up
+healthy). You also need to enable **Web sockets** under the App Service's
+Configuration > General settings — it is off by default and the `/ws`
+endpoint will not work without it.
