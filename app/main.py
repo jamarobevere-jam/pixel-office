@@ -36,7 +36,7 @@ async def _broadcast_loop() -> None:
         state = simulation.to_state()
 
         stale = set()
-        for ws in connected_websockets:
+        for ws in list(connected_websockets):
             try:
                 await ws.send_json(state)
             except Exception:
