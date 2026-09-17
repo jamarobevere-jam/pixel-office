@@ -25,6 +25,7 @@ function getSpriteImage(filename) {
 // Furniture is a small fixed set, preloaded eagerly so the offscreen
 // floorplan (drawn once) doesn't race image decode.
 const FURNITURE_FILES = {
+  floor: "floor.png",
   deskLeft: "desk_left.png",
   deskRight: "desk_right.png",
   plant: "plant.png",
@@ -84,8 +85,14 @@ function drawFloorplanToOffscreen(floorplan) {
 
   const tile = floorplan.tile_size;
 
-  floorplanCtx.fillStyle = COLORS.floor;
-  floorplanCtx.fillRect(0, 0, floorplanCanvas.width, floorplanCanvas.height);
+  if (furnitureReady && furnitureImages.floor && furnitureImages.floor.naturalWidth) {
+    const floorPattern = floorplanCtx.createPattern(furnitureImages.floor, "repeat");
+    floorplanCtx.fillStyle = floorPattern;
+    floorplanCtx.fillRect(0, 0, floorplanCanvas.width, floorplanCanvas.height);
+  } else {
+    floorplanCtx.fillStyle = COLORS.floor;
+    floorplanCtx.fillRect(0, 0, floorplanCanvas.width, floorplanCanvas.height);
+  }
 
   // Bottom-anchored: an image taller than one tile (plants, water dispenser)
   // is drawn so its bottom edge sits on the tile's bottom edge, growing
