@@ -1,0 +1,24 @@
+html, body {
+  margin: 0;
+  padding: 0;
+  background: #1a1a1a;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  height: 100vh;
+  overflow: hidden;
+}
+
+#scene {
+  background: #d9c9a3;
+  image-rendering: pixelated;
+}
+
+.status {
+  position: fixed;
+  top: 8px;
+  left: 8px;
+  color: #ff6b6b;
+  font-family: monospace;
+  font-size: 14px;
+}
