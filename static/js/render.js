@@ -10,6 +10,19 @@ const COLORS = {
 };
 
 const TICK_INTERVAL_MS = 100; // matches server's ~10Hz tick rate
+const SPRITE_SIZE = 40;
+
+const spriteImages = new Map();
+
+function getSpriteImage(filename) {
+  let img = spriteImages.get(filename);
+  if (!img) {
+    img = new Image();
+    img.src = `/static/assets/sprites/${filename}`;
+    spriteImages.set(filename, img);
+  }
+  return img;
+}
 
 let previousState = null;
 let latestState = null;
@@ -69,18 +82,18 @@ function drawPeople(people, factor, prevPeopleByName) {
       y = lerp(prev.y, person.y, factor);
     }
 
-    ctx.fillStyle = person.state === "talking" ? "#f0a500" : "#2b6cb0";
-    ctx.beginPath();
-    ctx.arc(x, y, 10, 0, Math.PI * 2);
-    ctx.fill();
+    const sprite = getSpriteImage(person.sprite);
+    if (sprite.complete && sprite.naturalWidth > 0) {
+      ctx.drawImage(sprite, x - SPRITE_SIZE / 2, y - SPRITE_SIZE / 2, SPRITE_SIZE, SPRITE_SIZE);
+    }
 
     ctx.fillStyle = "#ffffff";
     ctx.font = "10px monospace";
     ctx.textAlign = "center";
-    ctx.fillText(person.name, x, y - 14);
+    ctx.fillText(person.name, x, y - SPRITE_SIZE / 2 - 4);
 
     if (person.phrase) {
-      const bubbleY = y - 30;
+      const bubbleY = y - SPRITE_SIZE / 2 - 20;
       ctx.fillStyle = "#ffffff";
       const textWidth = ctx.measureText(person.phrase).width;
       ctx.fillRect(x - textWidth / 2 - 4, bubbleY - 12, textWidth + 8, 16);

@@ -1,106 +1,106 @@
 people:
   - name: Sebastian
-    sprite: sprite_01.png
+    sprite: sebastian.png
     desk: 0
     idle_phrases:
       - "Hello Hello"
   - name: Jose
-    sprite: sprite_02.png
+    sprite: jose.png
     desk: 1
     idle_phrases:
       - "It works on my machine ¯\\_(ツ)_/¯"
   - name: Abhishek
-    sprite: sprite_03.png
+    sprite: abhishek.png
     desk: 2
     idle_phrases:
       - "Blaming Microsoft Since Forever"
   - name: Rahul
-    sprite: sprite_04.png
+    sprite: rahul.png
     desk: 3
     idle_phrases:
       - "Relationships. Not just records."
   - name: Leandro
-    sprite: sprite_05.png
+    sprite: leandro.png
     desk: 4
     idle_phrases:
       - "I should be working"
   - name: Violetta
-    sprite: sprite_06.png
+    sprite: violetta.png
     desk: 5
     idle_phrases:
       - "They're supposed to be working"
   - name: Chandra
-    sprite: sprite_07.png
+    sprite: chandra.png
     desk: 6
     idle_phrases:
       - "Dynamic(s) by design"
   - name: Lukas
-    sprite: sprite_08.png
+    sprite: lukas.png
     desk: 7
     idle_phrases:
       - "I'm supposed to be working"
   - name: Kit
-    sprite: sprite_09.png
+    sprite: kit.png
     desk: 8
     idle_phrases:
       - "I'm working"
   - name: Yogesh
-    sprite: sprite_10.png
+    sprite: yogesh.png
     desk: 9
     idle_phrases:
       - "Keep Calm and Sync CRM"
   - name: Azamat
-    sprite: sprite_11.png
+    sprite: azamat.png
     desk: 10
     idle_phrases:
       - "I know what you broke last summer"
   - name: Gustavo
-    sprite: sprite_12.png
+    sprite: gustavo.png
     desk: 11
     idle_phrases:
       - "I need coffee"
   - name: Luis
-    sprite: sprite_13.png
+    sprite: luis.png
     desk: 12
     idle_phrases:
       - "Well, actually…"
   - name: Joao
-    sprite: sprite_14.png
+    sprite: joao.png
     desk: 13
     idle_phrases:
       - "Blaming Microsoft Since Forever"
   - name: Gaurav
-    sprite: sprite_15.png
+    sprite: gaurav.png
     desk: 14
     idle_phrases:
       - "Quick Call ?"
   - name: Irina
-    sprite: sprite_16.png
+    sprite: irina.png
     desk: 15
     idle_phrases:
       - "I don't break your app, I test its patience."
   - name: Daan
-    sprite: sprite_17.png
+    sprite: daan.png
     desk: 16
     idle_phrases:
       - "You're on mute"
   - name: Madhuri
-    sprite: sprite_18.png
+    sprite: madhuri.png
     desk: 17
     idle_phrases:
       - "Blaming Microsoft Since Forever"
   - name: Raksha
-    sprite: sprite_19.png
+    sprite: raksha.png
     desk: 18
     idle_phrases:
       - "Everything is stable, until QA logs in"
   - name: Matei
-    sprite: sprite_20.png
+    sprite: matei.png
     desk: 19
     idle_phrases:
       - "Working as intended"
   - name: Rachel
-    sprite: sprite_21.png
+    sprite: rachel.png
     desk: 20
     idle_phrases:
       - "Low Risk Appetite"
