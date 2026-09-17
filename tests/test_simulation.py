@@ -63,6 +63,33 @@ def test_at_desk_person_picks_walk_target_off_blocked_tiles():
     raise AssertionError("person never started walking within the tick budget")
 
 
+class _AlwaysSocialRng:
+    """Deterministic stand-in that always takes the 'approach a coworker'
+    branch and always picks the first candidate offered."""
+
+    def random(self):
+        return 0.0
+
+    def choice(self, seq):
+        return seq[0]
+
+    def uniform(self, a, b):
+        return a
+
+
+def test_pick_walk_target_can_land_near_another_idle_person():
+    a = make_person("A", 16, 16)
+    b = make_person("B", 16 + 32 * 3, 16)  # b is 3 tiles away from a
+    fp = make_floorplan()
+    sim = Simulation(people=[a, b], floorplan=fp, interactions=[], rng=_AlwaysSocialRng())
+
+    target_tile = sim._pick_walk_target(a, fp.tile_size)
+
+    b_tile = (int(b.x // fp.tile_size), int(b.y // fp.tile_size))
+    assert abs(target_tile[0] - b_tile[0]) <= 1
+    assert abs(target_tile[1] - b_tile[1]) <= 1
+
+
 def test_find_path_tiles_routes_around_obstacle_wall():
     # a wall of plants across row y=2 at x=1,2,3 leaves only x=0 and x=4 open;
     # a straight line from (2,0) to (2,4) would cut through the blocked wall.

@@ -7,8 +7,17 @@ WALK_SPEED_PX_PER_SEC = 60
 IDLE_MIN_SECONDS = 4
 IDLE_MAX_SECONDS = 12
 PHRASE_DURATION_SECONDS = 3
-TALK_PROXIMITY_PX = 40
-TALK_CHANCE_PER_TICK = 0.02
+# Walk targets snap to tile centers, so the smallest possible non-zero
+# distance between two of them is a diagonal-adjacent pair (tile_size *
+# sqrt(2)). The threshold must clear that, or "adjacent" people never
+# actually count as close.
+TALK_PROXIMITY_PX = 50
+TALK_CHANCE_PER_TICK = 0.08
+# Fraction of the time an idle person's next walk target is chosen near
+# another currently-idle person instead of a uniformly random tile — makes
+# people occasionally wander over to a coworker instead of relying on
+# fully independent random walks ever lining up by chance.
+SOCIAL_WALK_CHANCE = 0.35
 
 
 class Simulation:
@@ -65,7 +74,7 @@ class Simulation:
             del self._idle_until[person.name]
             tile_size = self.floorplan.tile_size
             start_tile = (int(person.x // tile_size), int(person.y // tile_size))
-            goal_tile = self.rng.choice(self._walkable_tiles)
+            goal_tile = self._pick_walk_target(person, tile_size)
             tiles = self._find_path_tiles(start_tile, goal_tile) or [goal_tile]
             waypoints = [
                 (tx * tile_size + tile_size / 2, ty * tile_size + tile_size / 2)
@@ -74,6 +83,22 @@ class Simulation:
             person.target_x, person.target_y = waypoints[0]
             person.path = waypoints[1:]
             person.state = "walking"
+
+    def _pick_walk_target(self, person: Person, tile_size: int) -> tuple[int, int]:
+        others_idle = [p for p in self.people if p is not person and p.state == "at_desk"]
+        if others_idle and self.rng.random() < SOCIAL_WALK_CHANCE:
+            target_person = self.rng.choice(others_idle)
+            ptx = int(target_person.x // tile_size)
+            pty = int(target_person.y // tile_size)
+            nearby = [
+                (ptx + dx, pty + dy)
+                for dx in (-1, 0, 1)
+                for dy in (-1, 0, 1)
+                if (ptx + dx, pty + dy) in self._walkable_set
+            ]
+            if nearby:
+                return self.rng.choice(nearby)
+        return self.rng.choice(self._walkable_tiles)
 
     def _find_path_tiles(
         self, start: tuple[int, int], goal: tuple[int, int]
