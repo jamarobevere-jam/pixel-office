@@ -44,3 +44,4 @@ class Person:
     target_y: float | None
     current_phrase: str | None
     phrase_expires_at: float | None
+    path: list[tuple[float, float]] | None = None

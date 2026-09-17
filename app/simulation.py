@@ -1,4 +1,5 @@
 import random
+from collections import deque
 
 from app.models import Floorplan, Person
 
@@ -32,6 +33,7 @@ class Simulation:
             for y in range(floorplan.height)
             if (x, y) not in blocked
         ]
+        self._walkable_set = set(self._walkable_tiles)
 
     def tick(self, now: float, dt: float) -> None:
         for person in self.people:
@@ -62,10 +64,57 @@ class Simulation:
         if now >= idle_until:
             del self._idle_until[person.name]
             tile_size = self.floorplan.tile_size
-            tx, ty = self.rng.choice(self._walkable_tiles)
-            person.target_x = tx * tile_size + tile_size / 2
-            person.target_y = ty * tile_size + tile_size / 2
+            start_tile = (int(person.x // tile_size), int(person.y // tile_size))
+            goal_tile = self.rng.choice(self._walkable_tiles)
+            tiles = self._find_path_tiles(start_tile, goal_tile) or [goal_tile]
+            waypoints = [
+                (tx * tile_size + tile_size / 2, ty * tile_size + tile_size / 2)
+                for tx, ty in tiles
+            ]
+            person.target_x, person.target_y = waypoints[0]
+            person.path = waypoints[1:]
             person.state = "walking"
+
+    def _find_path_tiles(
+        self, start: tuple[int, int], goal: tuple[int, int]
+    ) -> list[tuple[int, int]] | None:
+        """4-directional BFS avoiding furniture; the start tile itself is
+        always allowed even if blocked (a person standing at their desk is
+        already there)."""
+        if start == goal:
+            return [goal]
+
+        visited = {start}
+        parent: dict[tuple[int, int], tuple[int, int]] = {}
+        queue = deque([start])
+        width, height = self.floorplan.width, self.floorplan.height
+
+        while queue:
+            current = queue.popleft()
+            if current == goal:
+                break
+            cx, cy = current
+            for dx, dy in ((1, 0), (-1, 0), (0, 1), (0, -1)):
+                nxt = (cx + dx, cy + dy)
+                if nxt in visited:
+                    continue
+                if not (0 <= nxt[0] < width and 0 <= nxt[1] < height):
+                    continue
+                if nxt != goal and nxt not in self._walkable_set:
+                    continue
+                visited.add(nxt)
+                parent[nxt] = current
+                queue.append(nxt)
+        else:
+            return None  # goal unreachable
+
+        path = [goal]
+        node = goal
+        while node != start:
+            node = parent[node]
+            path.append(node)
+        path.reverse()
+        return path[1:]
 
     def _tick_walking(self, person: Person, dt: float, now: float) -> None:
         dx = person.target_x - person.x
@@ -75,8 +124,12 @@ class Simulation:
         if dist <= step:
             person.x = person.target_x
             person.y = person.target_y
+            if person.path:
+                person.target_x, person.target_y = person.path.pop(0)
+                return
             person.target_x = None
             person.target_y = None
+            person.path = None
             person.state = "at_desk"
             if self.rng.random() < 0.5:
                 person.current_phrase = self.rng.choice(person.idle_phrases)

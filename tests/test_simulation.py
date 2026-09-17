@@ -63,6 +63,38 @@ def test_at_desk_person_picks_walk_target_off_blocked_tiles():
     raise AssertionError("person never started walking within the tick budget")
 
 
+def test_find_path_tiles_routes_around_obstacle_wall():
+    # a wall of plants across row y=2 at x=1,2,3 leaves only x=0 and x=4 open;
+    # a straight line from (2,0) to (2,4) would cut through the blocked wall.
+    objects = [
+        WorldObject(type="plant", x=1, y=2),
+        WorldObject(type="plant", x=2, y=2),
+        WorldObject(type="plant", x=3, y=2),
+    ]
+    fp = Floorplan(width=5, height=5, tile_size=10, objects=objects)
+    sim = Simulation(people=[], floorplan=fp, interactions=[])
+
+    path = sim._find_path_tiles((2, 0), (2, 4))
+
+    assert path is not None
+    blocked = fp.blocked_tiles()
+    assert all(tile not in blocked for tile in path)
+    assert path[-1] == (2, 4)
+
+
+def test_find_path_tiles_start_tile_may_itself_be_blocked():
+    # a person standing at their own desk starts on a blocked tile; the
+    # path out of it must still be found.
+    objects = [WorldObject(type="desk", x=0, y=0)]
+    fp = Floorplan(width=5, height=5, tile_size=10, objects=objects)
+    sim = Simulation(people=[], floorplan=fp, interactions=[])
+
+    path = sim._find_path_tiles((0, 0), (4, 4))
+
+    assert path is not None
+    assert path[-1] == (4, 4)
+
+
 def test_walking_person_moves_toward_target_and_arrives():
     p = make_person("A", 0, 0, state="walking")
     p.target_x = 100.0
