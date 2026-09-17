@@ -28,6 +28,7 @@ const FURNITURE_FILES = {
   floor: "floor.png",
   deskLeft: "desk_left.png",
   deskRight: "desk_right.png",
+  chair: "chair_gray_B.png",
   plant: "plant.png",
   waterDispenser: "Water_dispenser.png",
   trashEmpty: "trash_can_empty.png",
@@ -126,6 +127,7 @@ function drawFloorplanToOffscreen(floorplan) {
         floorplanCtx.fillRect(px, py, tile, tile);
         break;
       case "desk": {
+        drawTile(furnitureImages.chair, obj.x, obj.y + 1);
         drawTile(furnitureImages.deskLeft, obj.x, obj.y);
         drawTile(furnitureImages.deskRight, obj.x + 1, obj.y);
         const monitor = pickMonitor(obj.x, obj.y);
