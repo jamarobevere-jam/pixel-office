@@ -27,7 +27,6 @@ function getSpriteImage(filename) {
 const FURNITURE_FILES = {
   deskLeft: "desk_left.png",
   deskRight: "desk_right.png",
-  keyboardMouse: "keyboard_mouse_black.png",
   plant: "plant.png",
   waterDispenser: "Water_dispenser.png",
   trashEmpty: "trash_can_empty.png",
@@ -35,6 +34,7 @@ const FURNITURE_FILES = {
   papers: "messy_papers.png",
 };
 const MONITOR_FILES = ["Monitor1_B.png", "Monitor1_F.png", "Monitor3_off_F.png", "Monitor3_on_F.png"];
+const MONITOR_LIFT = 20; // px shifted up so the monitor sits on the desk surface
 
 const furnitureImages = {};
 let furnitureReady = false;
@@ -118,12 +118,15 @@ function drawFloorplanToOffscreen(floorplan) {
         floorplanCtx.fillStyle = COLORS.window;
         floorplanCtx.fillRect(px, py, tile, tile);
         break;
-      case "desk":
+      case "desk": {
         drawTile(furnitureImages.deskLeft, obj.x, obj.y);
         drawTile(furnitureImages.deskRight, obj.x + 1, obj.y);
-        drawTile(pickMonitor(obj.x, obj.y), obj.x + 1, obj.y);
-        drawTile(furnitureImages.keyboardMouse, obj.x, obj.y);
+        const monitor = pickMonitor(obj.x, obj.y);
+        if (monitor && monitor.naturalWidth) {
+          floorplanCtx.drawImage(monitor, (obj.x + 1) * tile, obj.y * tile - MONITOR_LIFT);
+        }
         break;
+      }
       case "plant":
         drawBottomAnchored(furnitureImages.plant, obj.x, obj.y);
         break;
