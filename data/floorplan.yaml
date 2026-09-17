@@ -3,13 +3,13 @@ grid:
   height: 30
   tile_size: 32
 objects:
-  # windows along top wall (y=0)
-  - {type: window, x: 4, y: 0}
-  - {type: window, x: 10, y: 0}
-  - {type: window, x: 16, y: 0}
-  - {type: window, x: 22, y: 0}
-  - {type: window, x: 28, y: 0}
-  - {type: window, x: 34, y: 0}
+  # elevators along top wall (y=0), each 2x2 tiles
+  - {type: elevator, x: 4, y: 0}
+  - {type: elevator, x: 10, y: 0}
+  - {type: elevator, x: 16, y: 0}
+  - {type: elevator, x: 22, y: 0}
+  - {type: elevator, x: 28, y: 0}
+  - {type: elevator, x: 34, y: 0}
   # plants scattered
   - {type: plant, x: 2, y: 2}
   - {type: plant, x: 37, y: 2}

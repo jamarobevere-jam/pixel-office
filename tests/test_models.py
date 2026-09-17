@@ -22,15 +22,21 @@ def test_floorplan_blocked_tiles_covers_desk_footprint_and_chair():
     assert (5, 7) in blocked  # chair
 
 
-def test_floorplan_blocked_tiles_covers_plants_water_windows():
+def test_floorplan_blocked_tiles_covers_plants_and_water_dispensers():
     objs = [
         WorldObject(type="plant", x=2, y=2),
         WorldObject(type="water_dispenser", x=1, y=15),
-        WorldObject(type="window", x=4, y=0),
     ]
     fp = Floorplan(width=40, height=30, tile_size=32, objects=objs)
     blocked = fp.blocked_tiles()
-    assert blocked == {(2, 2), (1, 15), (4, 0)}
+    assert blocked == {(2, 2), (1, 15)}
+
+
+def test_floorplan_blocked_tiles_covers_elevator_2x2_footprint():
+    objs = [WorldObject(type="elevator", x=4, y=0)]
+    fp = Floorplan(width=40, height=30, tile_size=32, objects=objs)
+    blocked = fp.blocked_tiles()
+    assert blocked == {(4, 0), (5, 0), (4, 1), (5, 1)}
 
 
 def test_floorplan_blocked_tiles_excludes_floor_litter():

@@ -4,7 +4,6 @@ const statusEl = document.getElementById("status");
 
 const COLORS = {
   floor: "#d9c9a3",
-  window: "#bcd8f0",
 };
 
 const TICK_INTERVAL_MS = 100; // matches server's ~10Hz tick rate
@@ -34,6 +33,7 @@ const FURNITURE_FILES = {
   trashEmpty: "trash_can_empty.png",
   trashFull: "trash_can_full.png",
   papers: "messy_papers.png",
+  elevator: "elevator_closed.png",
 };
 const MONITOR_FILES = ["Monitor1_B.png", "Monitor1_F.png", "Monitor3_off_F.png", "Monitor3_on_F.png"];
 const MONITOR_LIFT = 20; // px shifted up so the monitor sits on the desk surface
@@ -117,15 +117,16 @@ function drawFloorplanToOffscreen(floorplan) {
     if (!furnitureReady) {
       // First paint before furniture images finish loading: flat rects so
       // the scene isn't blank; preloadFurniture() triggers a real redraw.
-      floorplanCtx.fillStyle = obj.type === "window" ? COLORS.window : "#999999";
+      floorplanCtx.fillStyle = "#999999";
       floorplanCtx.fillRect(px, py, tile, tile);
       continue;
     }
 
     switch (obj.type) {
-      case "window":
-        floorplanCtx.fillStyle = COLORS.window;
-        floorplanCtx.fillRect(px, py, tile, tile);
+      case "elevator":
+        if (furnitureImages.elevator && furnitureImages.elevator.naturalWidth) {
+          floorplanCtx.drawImage(furnitureImages.elevator, px, py);
+        }
         break;
       case "desk": {
         const chair = furnitureImages.chair;

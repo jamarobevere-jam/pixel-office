@@ -26,7 +26,12 @@ class Floorplan:
                 blocked.add((obj.x, obj.y))
                 blocked.add((obj.x + 1, obj.y))
                 blocked.add((obj.x + 1, obj.y + 1))  # chair
-            elif obj.type in ("plant", "water_dispenser", "window"):
+            elif obj.type == "elevator":
+                blocked.add((obj.x, obj.y))
+                blocked.add((obj.x + 1, obj.y))
+                blocked.add((obj.x, obj.y + 1))
+                blocked.add((obj.x + 1, obj.y + 1))
+            elif obj.type in ("plant", "water_dispenser"):
                 blocked.add((obj.x, obj.y))
         return blocked
 
