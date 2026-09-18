@@ -223,6 +223,23 @@ const BUBBLE_TOP_OFFSET = 18; // distance from text baseline to the bubble's top
 const BUBBLE_PADDING = 6;
 const BUBBLE_GAP = 4; // enforced clearance between stacked bubbles
 
+// When did each person's *current* phrase first appear? Used so a
+// staggered conversation's opener (revealed first) stacks above the reply
+// (revealed later), instead of stacking order depending on incidental
+// array order.
+const phraseSince = new Map(); // name -> {phrase, since}
+
+function trackPhraseTiming(people) {
+  for (const p of people) {
+    const entry = phraseSince.get(p.name);
+    if (!p.phrase) {
+      if (entry) phraseSince.delete(p.name);
+    } else if (!entry || entry.phrase !== p.phrase) {
+      phraseSince.set(p.name, { phrase: p.phrase, since: performance.now() });
+    }
+  }
+}
+
 function bubbleRectsOverlap(a, b) {
   return !(
     a.right < b.left - BUBBLE_GAP ||
@@ -235,10 +252,15 @@ function bubbleRectsOverlap(a, b) {
 // Nearby people (especially mid-conversation) can have overlapping bubble
 // rects at their natural anchor position; push a colliding bubble straight
 // up, one bubble-height at a time, until it clears every bubble already
-// placed this frame.
+// placed this frame. Processing newest-phrase-first means an older,
+// already-established phrase is the one that gets pushed up when it
+// collides with a newer one — so in a staggered exchange, the opener
+// (revealed first) ends up stacked above the reply (revealed later),
+// reading top-to-bottom in speaking order.
 function layoutAndDrawBubbles(candidates) {
+  const ordered = [...candidates].sort((a, b) => b.since - a.since);
   const placedRects = [];
-  for (const c of candidates) {
+  for (const c of ordered) {
     let bubbleY = c.anchorY;
     // Clamp the half-width itself in case a phrase is somehow wider than
     // the whole canvas, then clamp the bubble's horizontal center so its
@@ -302,6 +324,7 @@ function drawPeople(people, factor, prevPeopleByName) {
         anchorY: y - SPRITE_SIZE / 2 - 26,
         text: person.phrase,
         width: ctx.measureText(person.phrase).width,
+        since: phraseSince.get(person.name)?.since ?? performance.now(),
       });
     }
   }
@@ -353,6 +376,7 @@ function connect() {
     previousState = latestState;
     latestState = JSON.parse(event.data);
     latestReceivedAt = performance.now();
+    trackPhraseTiming(latestState.people);
   };
 
   ws.onclose = () => {
