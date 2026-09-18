@@ -13,6 +13,11 @@ PHRASE_DURATION_SECONDS = 6
 # actually count as close.
 TALK_PROXIMITY_PX = 50
 TALK_CHANCE_PER_TICK = 0.08
+# A conversation doesn't pop both lines up at once: a beat of silence
+# first, then the opener, then a further beat before the reply — reads as
+# an actual back-and-forth instead of two people talking over each other.
+TALK_START_DELAY_SECONDS = 0.6
+TALK_REPLY_DELAY_SECONDS = 1.4
 # Fraction of the time an idle person's next walk target is chosen near
 # another currently-idle person instead of a uniformly random tile — makes
 # people occasionally wander over to a coworker instead of relying on
@@ -50,6 +55,7 @@ class Simulation:
         self.rng = rng or random.Random()
         self._idle_until: dict[str, float] = {}
         self._talk_until: dict[str, float] = {}
+        self._pending_lines: list[tuple[Person, str, float]] = []
 
         blocked = floorplan.blocked_tiles()
         self._walkable_tiles = [
@@ -104,10 +110,22 @@ class Simulation:
         for person in self.people:
             self._dispatch_person(person, now, dt)
 
+        self._tick_pending_lines(now)
         self._tick_visitor_lifecycle(now, dt)
 
         if not self.visitor_active:
             self._maybe_start_conversations(now)
+
+    def _tick_pending_lines(self, now: float) -> None:
+        if not self._pending_lines:
+            return
+        still_pending = []
+        for person, line, reveal_at in self._pending_lines:
+            if now >= reveal_at:
+                person.current_phrase = line
+            else:
+                still_pending.append((person, line, reveal_at))
+        self._pending_lines = still_pending
 
     def _dispatch_person(self, person: Person, now: float, dt: float) -> None:
         if person.state == "at_desk":
@@ -276,12 +294,15 @@ class Simulation:
                     line_a, line_b = self.rng.choice(self.interactions)
                     a.state = "talking"
                     b.state = "talking"
-                    a.current_phrase = line_a
-                    b.current_phrase = line_b
-                    a.phrase_expires_at = now + PHRASE_DURATION_SECONDS
-                    b.phrase_expires_at = now + PHRASE_DURATION_SECONDS
-                    self._talk_until[a.name] = now + PHRASE_DURATION_SECONDS
-                    self._talk_until[b.name] = now + PHRASE_DURATION_SECONDS
+                    a.current_phrase = None
+                    b.current_phrase = None
+                    reveal_a_at = now + TALK_START_DELAY_SECONDS
+                    reveal_b_at = reveal_a_at + TALK_REPLY_DELAY_SECONDS
+                    self._pending_lines.append((a, line_a, reveal_a_at))
+                    self._pending_lines.append((b, line_b, reveal_b_at))
+                    end_at = reveal_b_at + PHRASE_DURATION_SECONDS
+                    self._talk_until[a.name] = end_at
+                    self._talk_until[b.name] = end_at
                     return
 
     # -- Visitor ("boss visit") scenario --------------------------------
@@ -370,6 +391,9 @@ class Simulation:
 
     def _send_everyone_to_desk(self, now: float) -> None:
         desks = self.floorplan.desks()
+        # every pending (not-yet-revealed) exchange line belongs to someone
+        # in self.people, and all of them are about to be redirected
+        self._pending_lines = []
         for person in self.people:
             person.current_phrase = None
             person.phrase_expires_at = None

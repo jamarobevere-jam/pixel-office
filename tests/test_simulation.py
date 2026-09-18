@@ -172,6 +172,32 @@ def test_walking_person_moves_toward_target_and_arrives():
     assert p.target_x is None
 
 
+def test_conversation_lines_are_staggered_not_simultaneous():
+    a = make_person("A", 0, 0)
+    b = make_person("B", 10, 0)
+    sim = Simulation(
+        people=[a, b], floorplan=make_floorplan(),
+        interactions=[("Hi", "Hello")],
+        rng=random.Random(1),
+    )
+    a_revealed_at = None
+    b_revealed_at = None
+    for i in range(600):
+        now = 0.1 * i
+        sim.tick(now=now, dt=0.1)
+        if a_revealed_at is None and a.current_phrase == "Hi":
+            a_revealed_at = now
+        if b_revealed_at is None and b.current_phrase == "Hello":
+            b_revealed_at = now
+        if a_revealed_at is not None and b_revealed_at is not None:
+            break
+
+    assert a_revealed_at is not None
+    assert b_revealed_at is not None
+    assert b_revealed_at > a_revealed_at  # the reply comes after the opener
+    assert (b_revealed_at - a_revealed_at) >= 1.0  # a real gap, not simultaneous
+
+
 def test_two_proximate_people_can_start_talking():
     a = make_person("A", 0, 0)
     b = make_person("B", 10, 0)  # within TALK_PROXIMITY_PX
@@ -181,14 +207,17 @@ def test_two_proximate_people_can_start_talking():
         rng=random.Random(1),  # seed chosen s.t. talk chance triggers below
     )
     talked = False
-    for i in range(500):
+    # lines are revealed a couple beats after "talking" starts (staggered
+    # exchange), so keep ticking a bit past the state transition itself
+    for i in range(600):
         sim.tick(now=0.1 * i, dt=0.1)
-        if a.state == "talking" and b.state == "talking":
+        if a.state == "talking" and b.state == "talking" and a.current_phrase and b.current_phrase:
             talked = True
             break
     assert talked
     assert a.current_phrase in ("Hi", "Hello")
     assert b.current_phrase in ("Hi", "Hello")
+    assert a.current_phrase != b.current_phrase  # each got their own line
 
 
 def test_to_state_hides_expired_phrase():
