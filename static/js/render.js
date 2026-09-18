@@ -34,6 +34,7 @@ const FURNITURE_FILES = {
   trashFull: "trash_can_full.png",
   papers: "messy_papers.png",
   elevator: "elevator_closed.png",
+  elevatorOpen: "elevator_open.png",
 };
 const MONITOR_FILES = ["Monitor1_B.png", "Monitor1_F.png", "Monitor3_off_F.png", "Monitor3_on_F.png"];
 const MONITOR_LIFT = 20; // px shifted up so the monitor sits on the desk surface
@@ -287,6 +288,16 @@ function drawPeople(people, factor, prevPeopleByName) {
   layoutAndDrawBubbles(bubbleCandidates);
 }
 
+// The cached offscreen floorplan always draws elevators closed (door state
+// isn't part of floorplan.objects); an open elevator is drawn fresh each
+// frame on top, from the WebSocket state's separate open_elevator field.
+function drawOpenElevator(openElevator, tile) {
+  if (!openElevator) return;
+  const img = furnitureImages.elevatorOpen;
+  if (!img || !img.naturalWidth) return;
+  ctx.drawImage(img, openElevator.x * tile, openElevator.y * tile);
+}
+
 function render() {
   if (latestState) {
     if (floorplanChanged(latestState.floorplan)) {
@@ -294,6 +305,7 @@ function render() {
     }
 
     ctx.drawImage(floorplanCanvas, 0, 0);
+    drawOpenElevator(latestState.open_elevator, latestState.floorplan.tile_size);
 
     let factor = 1;
     let prevPeopleByName = null;

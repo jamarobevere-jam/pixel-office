@@ -1,6 +1,6 @@
 import random
 
-from app.models import Floorplan, Person, WorldObject
+from app.models import Floorplan, Person, Visitor, WorldObject
 from app.simulation import Simulation
 
 
@@ -10,6 +10,26 @@ def make_floorplan():
         WorldObject(type="desk", x=5, y=0),
     ]
     return Floorplan(width=10, height=10, tile_size=32, objects=objects)
+
+
+def make_floorplan_with_elevator():
+    objects = [
+        WorldObject(type="elevator", x=0, y=0),
+        WorldObject(type="desk", x=5, y=5),
+    ]
+    return Floorplan(width=12, height=12, tile_size=32, objects=objects)
+
+
+def make_visitor():
+    return Visitor(name="Frits", sprite="frits.png", phrases=["Best of breed", "Bullshit!"])
+
+
+def run_ticks(sim, start_now, dt, count):
+    now = start_now
+    for _ in range(count):
+        sim.tick(now=now, dt=dt)
+        now += dt
+    return now
 
 
 def make_person(name, x, y, state="at_desk"):
@@ -183,3 +203,100 @@ def test_to_state_hides_expired_phrase():
     sim.tick(now=10.0, dt=0.1)
     state = sim.to_state()
     assert state["people"][0]["phrase"] is None
+
+
+def test_visitor_not_active_before_trigger_time():
+    fp = make_floorplan_with_elevator()
+    a = make_person("A", 5 * 32 + 16, 5 * 32 + 16)
+    a.desk = 0
+    sim = Simulation(
+        people=[a], floorplan=fp, interactions=[], visitor=make_visitor(),
+        rng=random.Random(1),
+    )
+    sim.tick(now=0.0, dt=0.1)
+    assert sim.visitor_active is False
+    assert sim.visitor_visible is False
+    assert sim.open_elevator is None
+    assert "Frits" not in [p["name"] for p in sim.to_state()["people"]]
+
+
+def test_visitor_entrance_interrupts_talking_person():
+    fp = make_floorplan_with_elevator()
+    a = make_person("A", 3 * 32 + 16, 3 * 32 + 16, state="talking")
+    a.desk = 0
+    a.current_phrase = "mid conversation"
+    a.phrase_expires_at = 999.0
+    sim = Simulation(
+        people=[a], floorplan=fp, interactions=[], visitor=make_visitor(),
+        rng=random.Random(1),
+    )
+    sim._talk_until[a.name] = 999.0
+    sim._visitor_next_trigger_at = 0.0
+
+    sim.tick(now=0.0, dt=0.1)
+
+    assert sim.visitor_active is True
+    assert sim.open_elevator == (0, 0)
+    assert a.state == "walking"
+    assert a.current_phrase is None
+    assert a.name not in sim._talk_until
+
+
+def test_visitor_full_lifecycle_freezes_and_releases_people():
+    fp = make_floorplan_with_elevator()
+    # starts away from its own desk so it has real distance to cover
+    a = make_person("A", 10 * 32 + 16, 10 * 32 + 16)
+    a.desk = 0
+    sim = Simulation(
+        people=[a], floorplan=fp, interactions=[], visitor=make_visitor(),
+        rng=random.Random(3),
+    )
+    sim._visitor_next_trigger_at = 0.0
+
+    now = run_ticks(sim, 0.0, 0.1, 1)
+    assert sim.visitor_active is True
+    assert sim.visitor_visible is True
+    assert sim.open_elevator == (0, 0)
+    assert sim.to_state()["open_elevator"] == {"x": 0, "y": 0}
+    assert any(p["name"] == "Frits" for p in sim.to_state()["people"])
+    assert a.state == "walking"
+
+    # let a walk itself all the way home (many small ticks, real movement)
+    now = run_ticks(sim, now, 0.5, 40)
+    assert a.state == "at_desk"
+    assert (int(a.x // fp.tile_size), int(a.y // fp.tile_size)) == (5, 5)
+    assert a.current_phrase is None  # arrival is silent during a visit
+
+    # doors should have closed and wandering begun well before now
+    assert sim.open_elevator is None
+    assert sim._visitor_phase == "wandering"
+
+    # advance well past a's own normal idle window (max 12s) while still
+    # inside the 20s wander window; a must stay frozen, not wander off
+    now = run_ticks(sim, now, 0.5, 20)  # +10s
+    assert a.state == "at_desk"
+    assert a.name not in sim._idle_until
+
+    # advance past the rest of the wander window, the return walk, and the
+    # exit door timer
+    now = run_ticks(sim, now, 0.5, 80)  # +40s, generous
+    assert sim.visitor_active is False
+    assert sim.visitor_visible is False
+    assert sim.open_elevator is None
+    assert sim._visitor_phase == "away"
+    assert not any(p["name"] == "Frits" for p in sim.to_state()["people"])
+
+    # a is released, not stuck: it either has a fresh idle timer running or
+    # has already cycled through one and started walking again on its own
+    run_ticks(sim, now, 0.1, 1)
+    assert a.name in sim._idle_until or a.state == "walking"
+
+
+def test_visitor_disabled_without_elevators_in_floorplan():
+    objects = [WorldObject(type="desk", x=0, y=0)]
+    fp = Floorplan(width=10, height=10, tile_size=32, objects=objects)
+    sim = Simulation(
+        people=[], floorplan=fp, interactions=[], visitor=make_visitor(),
+        rng=random.Random(1),
+    )
+    assert sim.visitor is None

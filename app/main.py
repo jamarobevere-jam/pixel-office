@@ -7,7 +7,7 @@ from fastapi import FastAPI, Request, WebSocket, WebSocketDisconnect
 from fastapi.responses import FileResponse
 from fastapi.staticfiles import StaticFiles
 
-from app.config_loader import load_floorplan, load_interactions, load_people
+from app.config_loader import load_floorplan, load_interactions, load_people, load_visitor
 from app.simulation import Simulation
 
 BASE_DIR = os.path.dirname(os.path.dirname(os.path.abspath(__file__)))
@@ -18,7 +18,10 @@ TICK_HZ = 10
 floorplan = load_floorplan(os.path.join(DATA_DIR, "floorplan.yaml"))
 people = load_people(os.path.join(DATA_DIR, "people.yaml"), floorplan)
 interactions = load_interactions(os.path.join(DATA_DIR, "interactions.yaml"))
-simulation = Simulation(people=people, floorplan=floorplan, interactions=interactions)
+visitor = load_visitor(os.path.join(DATA_DIR, "visitor.yaml"))
+simulation = Simulation(
+    people=people, floorplan=floorplan, interactions=interactions, visitor=visitor
+)
 
 connected_websockets: set[WebSocket] = set()
 

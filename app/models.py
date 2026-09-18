@@ -50,3 +50,10 @@ class Person:
     current_phrase: str | None
     phrase_expires_at: float | None
     path: list[tuple[float, float]] | None = None
+
+
+@dataclass
+class Visitor:
+    name: str
+    sprite: str
+    phrases: list[str]

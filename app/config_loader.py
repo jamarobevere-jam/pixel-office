@@ -1,6 +1,6 @@
 import yaml
 
-from app.models import Floorplan, Person, WorldObject
+from app.models import Floorplan, Person, Visitor, WorldObject
 
 
 class ConfigError(Exception):
@@ -83,3 +83,15 @@ def load_interactions(path: str) -> list[tuple[str, str]]:
         return [tuple(pair) for pair in data["exchanges"]]
     except (KeyError, TypeError) as e:
         raise ConfigError(f"Malformed interactions config {path}: {e}") from e
+
+
+def load_visitor(path: str) -> Visitor:
+    data = _load_yaml(path)
+    try:
+        return Visitor(
+            name=data["name"],
+            sprite=data["sprite"],
+            phrases=list(data["phrases"]),
+        )
+    except (KeyError, TypeError) as e:
+        raise ConfigError(f"Malformed visitor config {path}: {e}") from e

@@ -6,6 +6,7 @@ from app.config_loader import (
     load_floorplan,
     load_people,
     load_interactions,
+    load_visitor,
 )
 
 
@@ -65,6 +66,19 @@ people:
 INTERACTIONS_YAML = """
 exchanges:
   - ["Coffee?", "Always."]
+"""
+
+VISITOR_YAML = """
+name: Frits
+sprite: frits.png
+phrases:
+  - "Best of breed"
+  - "Bullshit!"
+"""
+
+VISITOR_YAML_MALFORMED = """
+name: Frits
+sprite: frits.png
 """
 
 
@@ -153,3 +167,19 @@ def test_load_interactions(tmp_path):
     p.write_text(INTERACTIONS_YAML)
     pairs = load_interactions(str(p))
     assert pairs == [("Coffee?", "Always.")]
+
+
+def test_load_visitor(tmp_path):
+    p = tmp_path / "visitor.yaml"
+    p.write_text(VISITOR_YAML)
+    visitor = load_visitor(str(p))
+    assert visitor.name == "Frits"
+    assert visitor.sprite == "frits.png"
+    assert visitor.phrases == ["Best of breed", "Bullshit!"]
+
+
+def test_load_visitor_raises_config_error_on_malformed_entry(tmp_path):
+    p = tmp_path / "visitor.yaml"
+    p.write_text(VISITOR_YAML_MALFORMED)
+    with pytest.raises(ConfigError):
+        load_visitor(str(p))
