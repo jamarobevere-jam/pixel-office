@@ -39,7 +39,9 @@ const FURNITURE_FILES = {
 const MONITOR_FILES = ["Monitor1_B.png", "Monitor1_F.png", "Monitor3_off_F.png", "Monitor3_on_F.png"];
 const MONITOR_LIFT = 20; // px shifted up so the monitor sits on the desk surface
 const CHAIR_LIFT = 14; // px shifted up so the chair tucks under the monitor's tile
+const CHAIR_RIGHT_SHIFT = 8; // px nudged right to re-align with the current desk art
 const CLUTTER_SCALE = 1.7; // bins/papers drawn this many times tile size, centered
+const SEATED_LIFT = 8; // px a person's sprite is nudged up while at_desk, to read as sitting in the chair
 
 const furnitureImages = {};
 let furnitureReady = false;
@@ -143,7 +145,7 @@ function drawFloorplanToOffscreen(floorplan) {
       case "desk": {
         const chair = furnitureImages.chair;
         if (chair && chair.naturalWidth) {
-          floorplanCtx.drawImage(chair, obj.x * tile, (obj.y + 1) * tile - CHAIR_LIFT);
+          floorplanCtx.drawImage(chair, obj.x * tile + CHAIR_RIGHT_SHIFT, (obj.y + 1) * tile - CHAIR_LIFT);
         }
         drawTile(furnitureImages.deskLeft, obj.x, obj.y);
         drawTile(furnitureImages.deskRight, obj.x + 1, obj.y);
@@ -278,6 +280,9 @@ function drawPeople(people, factor, prevPeopleByName) {
     if (prev) {
       x = lerp(prev.x, person.x, factor);
       y = lerp(prev.y, person.y, factor);
+    }
+    if (person.state === "at_desk") {
+      y -= SEATED_LIFT; // purely visual: reads as sitting in the chair, not floating below it
     }
 
     const sprite = getSpriteImage(person.sprite);
