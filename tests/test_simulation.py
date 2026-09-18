@@ -63,6 +63,18 @@ def test_at_desk_person_picks_walk_target_off_blocked_tiles():
     raise AssertionError("person never started walking within the tick budget")
 
 
+def test_walk_target_tiles_exclude_the_outer_border():
+    # a person idling on the outermost ring of tiles would render with
+    # their sprite (wider than half a tile) or speech bubble partly off
+    # the canvas, so walk *destinations* must stay one tile clear of it.
+    fp = make_floorplan()  # 10x10
+    sim = Simulation(people=[], floorplan=fp, interactions=[])
+
+    for x, y in sim._walk_target_tiles:
+        assert 0 < x < fp.width - 1
+        assert 0 < y < fp.height - 1
+
+
 class _AlwaysSocialRng:
     """Deterministic stand-in that always takes the 'approach a coworker'
     branch and always picks the first candidate offered."""

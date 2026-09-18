@@ -44,6 +44,18 @@ class Simulation:
         ]
         self._walkable_set = set(self._walkable_tiles)
 
+        # Walk *destinations* stay one tile clear of the outer border, so a
+        # person idling there never renders with their sprite/name partly
+        # off-canvas (a sprite is wider than half a tile). Pathfinding
+        # itself still uses the full _walkable_set above, so a route is
+        # free to pass through the border strip in transit.
+        self._walk_target_tiles = [
+            (x, y)
+            for (x, y) in self._walkable_tiles
+            if 0 < x < floorplan.width - 1 and 0 < y < floorplan.height - 1
+        ] or self._walkable_tiles
+        self._walk_target_set = set(self._walk_target_tiles)
+
     def tick(self, now: float, dt: float) -> None:
         for person in self.people:
             if person.state == "at_desk":
@@ -94,11 +106,11 @@ class Simulation:
                 (ptx + dx, pty + dy)
                 for dx in (-1, 0, 1)
                 for dy in (-1, 0, 1)
-                if (ptx + dx, pty + dy) in self._walkable_set
+                if (ptx + dx, pty + dy) in self._walk_target_set
             ]
             if nearby:
                 return self.rng.choice(nearby)
-        return self.rng.choice(self._walkable_tiles)
+        return self.rng.choice(self._walk_target_tiles)
 
     def _find_path_tiles(
         self, start: tuple[int, int], goal: tuple[int, int]

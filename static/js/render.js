@@ -222,11 +222,16 @@ function layoutAndDrawBubbles(candidates) {
   const placedRects = [];
   for (const c of candidates) {
     let bubbleY = c.anchorY;
-    const halfWidth = c.width / 2 + BUBBLE_PADDING;
+    // Clamp the half-width itself in case a phrase is somehow wider than
+    // the whole canvas, then clamp the bubble's horizontal center so its
+    // full width stays on-canvas even when the speaker is right at the
+    // (now edge-avoiding, but not guaranteed for arbitrary text) border.
+    const halfWidth = Math.min(c.width / 2 + BUBBLE_PADDING, canvas.width / 2);
+    const bubbleX = Math.min(Math.max(c.x, halfWidth), canvas.width - halfWidth);
     for (let attempt = 0; attempt < 20; attempt++) {
       const rect = {
-        left: c.x - halfWidth,
-        right: c.x + halfWidth,
+        left: bubbleX - halfWidth,
+        right: bubbleX + halfWidth,
         top: bubbleY - 12,
         bottom: bubbleY - 12 + BUBBLE_HEIGHT,
       };
@@ -236,13 +241,14 @@ function layoutAndDrawBubbles(candidates) {
       }
       bubbleY -= BUBBLE_HEIGHT + BUBBLE_GAP;
     }
+    bubbleY = Math.max(bubbleY, 12); // keep the bubble top on-canvas too
 
     ctx.fillStyle = "#ffffff";
-    ctx.fillRect(c.x - halfWidth, bubbleY - 12, halfWidth * 2, BUBBLE_HEIGHT);
+    ctx.fillRect(bubbleX - halfWidth, bubbleY - 12, halfWidth * 2, BUBBLE_HEIGHT);
     ctx.fillStyle = "#000000";
     ctx.font = "10px monospace";
     ctx.textAlign = "center";
-    ctx.fillText(c.text, c.x, bubbleY);
+    ctx.fillText(c.text, bubbleX, bubbleY);
   }
 }
 
