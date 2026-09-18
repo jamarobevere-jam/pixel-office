@@ -18,6 +18,12 @@ class Floorplan:
     def desks(self) -> list[WorldObject]:
         return [o for o in self.objects if o.type == "desk"]
 
+    @staticmethod
+    def desk_seat_tile(desk: WorldObject) -> tuple[int, int]:
+        """Tile a person sitting at this desk should render at — the chair
+        spot in front of the monitor, not the desk's own (back-left) tile."""
+        return (desk.x + 1, desk.y + 1)
+
     def blocked_tiles(self) -> set[tuple[int, int]]:
         """Tiles occupied by furniture people shouldn't walk through."""
         blocked: set[tuple[int, int]] = set()

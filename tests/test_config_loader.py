@@ -104,9 +104,10 @@ def test_load_people_sets_initial_position_at_desk_center(tmp_path):
     sebastian = people[0]
     assert sebastian.name == "Sebastian"
     assert sebastian.state == "at_desk"
-    # desk 0 is at tile (4,6), tile_size 32 -> center (144, 208)
-    assert sebastian.x == 4 * 32 + 16
-    assert sebastian.y == 6 * 32 + 16
+    # desk 0 is at tile (4,6); a person sits at the chair tile in front of
+    # it, (5,7), tile_size 32 -> center (176, 240)
+    assert sebastian.x == 5 * 32 + 16
+    assert sebastian.y == 7 * 32 + 16
 
 
 def test_load_people_raises_on_bad_desk_index(tmp_path):

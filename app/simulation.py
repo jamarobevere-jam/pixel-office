@@ -26,7 +26,13 @@ VISITOR_MIN_INTERVAL_SECONDS = 90
 VISITOR_MAX_INTERVAL_SECONDS = 240
 VISITOR_WANDER_SECONDS = 20
 VISITOR_DOOR_OPEN_SECONDS = 1.5
-VISITOR_PHRASE_CHANCE = 0.85
+VISITOR_PHRASE_CHANCE = 1.0
+# Short pauses between stops so he cycles through several phrases within
+# his brief appearance, instead of sharing the regular staff's 4-12s idle
+# window (which would barely fit 1-2 stops in a 20s visit).
+VISITOR_IDLE_MIN_SECONDS = 1.0
+VISITOR_IDLE_MAX_SECONDS = 2.5
+VISITOR_WANDER_RADIUS_TILES = 4
 
 
 class Simulation:
@@ -125,13 +131,20 @@ class Simulation:
             return  # frozen at desk for the duration of a visit
         idle_until = self._idle_until.get(person.name)
         if idle_until is None:
-            idle_until = now + self.rng.uniform(IDLE_MIN_SECONDS, IDLE_MAX_SECONDS)
+            if person is self.visitor:
+                lo, hi = VISITOR_IDLE_MIN_SECONDS, VISITOR_IDLE_MAX_SECONDS
+            else:
+                lo, hi = IDLE_MIN_SECONDS, IDLE_MAX_SECONDS
+            idle_until = now + self.rng.uniform(lo, hi)
             self._idle_until[person.name] = idle_until
             return
         if now >= idle_until:
             del self._idle_until[person.name]
             tile_size = self.floorplan.tile_size
-            goal_tile = self._pick_walk_target(person, tile_size)
+            if person is self.visitor:
+                goal_tile = self._pick_visitor_wander_target(tile_size)
+            else:
+                goal_tile = self._pick_walk_target(person, tile_size)
             self._begin_walk_to(person, goal_tile)
 
     def _begin_walk_to(self, person: Person, goal_tile: tuple[int, int]) -> None:
@@ -160,6 +173,23 @@ class Simulation:
             ]
             if nearby:
                 return self.rng.choice(nearby)
+        return self.rng.choice(self._walk_target_tiles)
+
+    def _pick_visitor_wander_target(self, tile_size: int) -> tuple[int, int]:
+        """Short hops around his current spot, not a random point anywhere
+        on the floor — a single long cross-office walk could otherwise eat
+        most of his brief visit and leave little time to actually stop and
+        say anything."""
+        cx = int(self.visitor.x // tile_size)
+        cy = int(self.visitor.y // tile_size)
+        candidates = [
+            (cx + dx, cy + dy)
+            for dx in range(-VISITOR_WANDER_RADIUS_TILES, VISITOR_WANDER_RADIUS_TILES + 1)
+            for dy in range(-VISITOR_WANDER_RADIUS_TILES, VISITOR_WANDER_RADIUS_TILES + 1)
+            if (dx, dy) != (0, 0) and (cx + dx, cy + dy) in self._walk_target_set
+        ]
+        if candidates:
+            return self.rng.choice(candidates)
         return self.rng.choice(self._walk_target_tiles)
 
     def _find_path_tiles(
@@ -283,7 +313,7 @@ class Simulation:
                 self._visitor_phase = "wandering"
                 self._visitor_wander_until = now + VISITOR_WANDER_SECONDS
                 tile_size = self.floorplan.tile_size
-                goal_tile = self._pick_walk_target(self.visitor, tile_size)
+                goal_tile = self._pick_visitor_wander_target(tile_size)
                 self._begin_walk_to(self.visitor, goal_tile)
             return
 
@@ -346,7 +376,7 @@ class Simulation:
             self._talk_until.pop(person.name, None)
             self._idle_until.pop(person.name, None)
             desk_obj = desks[person.desk]
-            self._begin_walk_to(person, (desk_obj.x, desk_obj.y))
+            self._begin_walk_to(person, self.floorplan.desk_seat_tile(desk_obj))
 
     def to_state(self) -> dict:
         people_state = [self._person_state(p) for p in self.people]

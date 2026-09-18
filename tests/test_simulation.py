@@ -205,6 +205,37 @@ def test_to_state_hides_expired_phrase():
     assert state["people"][0]["phrase"] is None
 
 
+def test_visitor_gets_a_shorter_idle_window_than_regular_staff():
+    fp = make_floorplan_with_elevator()
+    sim = Simulation(
+        people=[], floorplan=fp, interactions=[], visitor=make_visitor(),
+        rng=random.Random(5),
+    )
+    sim.visitor.x, sim.visitor.y = 6 * 32 + 16, 6 * 32 + 16
+
+    sim._tick_at_desk(sim.visitor, now=0.0)
+
+    idle_until = sim._idle_until[sim.visitor.name]
+    assert 1.0 <= idle_until <= 2.5  # VISITOR_IDLE range, not the 4-12s staff range
+
+
+def test_visitor_wander_target_stays_within_a_short_radius():
+    # a big, mostly-empty floorplan (just the one elevator the constructor
+    # requires) so any tile is a valid candidate -- proves the picker
+    # itself constrains the radius, not that the map happens to be small.
+    fp = Floorplan(width=40, height=40, tile_size=32, objects=[WorldObject(type="elevator", x=0, y=0)])
+    sim = Simulation(
+        people=[], floorplan=fp, interactions=[], visitor=make_visitor(),
+        rng=random.Random(7),
+    )
+    sim.visitor.x, sim.visitor.y = 20 * 32 + 16, 20 * 32 + 16
+
+    for _ in range(20):
+        tx, ty = sim._pick_visitor_wander_target(fp.tile_size)
+        assert abs(tx - 20) <= 4
+        assert abs(ty - 20) <= 4
+
+
 def test_visitor_not_active_before_trigger_time():
     fp = make_floorplan_with_elevator()
     a = make_person("A", 5 * 32 + 16, 5 * 32 + 16)
@@ -264,7 +295,8 @@ def test_visitor_full_lifecycle_freezes_and_releases_people():
     # let a walk itself all the way home (many small ticks, real movement)
     now = run_ticks(sim, now, 0.5, 40)
     assert a.state == "at_desk"
-    assert (int(a.x // fp.tile_size), int(a.y // fp.tile_size)) == (5, 5)
+    # desk is at (5,5); a person sits one tile in (the chair), at (6,6)
+    assert (int(a.x // fp.tile_size), int(a.y // fp.tile_size)) == (6, 6)
     assert a.current_phrase is None  # arrival is silent during a visit
 
     # doors should have closed and wandering begun well before now
@@ -278,8 +310,13 @@ def test_visitor_full_lifecycle_freezes_and_releases_people():
     assert a.name not in sim._idle_until
 
     # advance past the rest of the wander window, the return walk, and the
-    # exit door timer
-    now = run_ticks(sim, now, 0.5, 80)  # +40s, generous
+    # exit door timer; poll instead of a fixed tick count since exact
+    # timing depends on rng-picked wander targets
+    for _ in range(400):
+        sim.tick(now=now, dt=0.5)
+        now += 0.5
+        if not sim.visitor_active:
+            break
     assert sim.visitor_active is False
     assert sim.visitor_visible is False
     assert sim.open_elevator is None

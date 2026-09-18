@@ -55,8 +55,9 @@ def load_people(path: str, floorplan: Floorplan) -> list[Person]:
                 )
             seen_names.add(name)
             desk_obj = desks[desk_index]
-            cx = desk_obj.x * floorplan.tile_size + floorplan.tile_size / 2
-            cy = desk_obj.y * floorplan.tile_size + floorplan.tile_size / 2
+            seat_x, seat_y = floorplan.desk_seat_tile(desk_obj)
+            cx = seat_x * floorplan.tile_size + floorplan.tile_size / 2
+            cy = seat_y * floorplan.tile_size + floorplan.tile_size / 2
             people.append(
                 Person(
                     name=name,
