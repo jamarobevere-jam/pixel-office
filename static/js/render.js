@@ -168,7 +168,22 @@ function drawFloorplanToOffscreen(floorplan) {
     canvas.width = floorplanCanvas.width;
     canvas.height = floorplanCanvas.height;
   }
+  scaleCanvasToFit();
 }
+
+// Scales the canvas's CSS box (not its pixel buffer) to fill the viewport
+// while preserving the floorplan's aspect ratio, so the whole office is
+// always visible and as large as the screen allows — relying on
+// object-fit for this proved unreliable across environments, so the scale
+// is computed and applied directly.
+function scaleCanvasToFit() {
+  if (!canvas.width || !canvas.height) return;
+  const scale = Math.min(window.innerWidth / canvas.width, window.innerHeight / canvas.height);
+  canvas.style.width = `${canvas.width * scale}px`;
+  canvas.style.height = `${canvas.height * scale}px`;
+}
+
+window.addEventListener("resize", scaleCanvasToFit);
 
 function floorplanChanged(floorplan) {
   if (!cachedFloorplan) return true;

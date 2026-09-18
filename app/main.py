@@ -3,7 +3,7 @@ import os
 import time
 from contextlib import asynccontextmanager
 
-from fastapi import FastAPI, WebSocket, WebSocketDisconnect
+from fastapi import FastAPI, Request, WebSocket, WebSocketDisconnect
 from fastapi.responses import FileResponse
 from fastapi.staticfiles import StaticFiles
 
@@ -60,6 +60,20 @@ async def lifespan(app: FastAPI):
 app = FastAPI(lifespan=lifespan)
 
 app.mount("/static", StaticFiles(directory=STATIC_DIR), name="static")
+
+
+@app.middleware("http")
+async def no_heuristic_static_caching(request: Request, call_next):
+    # StaticFiles sets no Cache-Control header, so browsers fall back to
+    # heuristic caching and can keep serving a stale index.html/JS/CSS for
+    # a while after a real edit even on a manual reload. This forces
+    # revalidation on every request instead (still cheap: a 304 when the
+    # file hasn't changed) — a kiosk that stays open for days must pick up
+    # deploys reliably.
+    response = await call_next(request)
+    if request.url.path == "/" or request.url.path.startswith("/static/"):
+        response.headers["Cache-Control"] = "no-cache"
+    return response
 
 
 @app.get("/")

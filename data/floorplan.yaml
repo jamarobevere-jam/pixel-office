@@ -1,52 +1,52 @@
 grid:
-  width: 40
-  height: 30
+  width: 36
+  height: 24
   tile_size: 32
 objects:
   # elevators along top wall (y=0), each 2x2 tiles
-  - {type: elevator, x: 4, y: 0}
-  - {type: elevator, x: 10, y: 0}
-  - {type: elevator, x: 16, y: 0}
-  - {type: elevator, x: 22, y: 0}
-  - {type: elevator, x: 28, y: 0}
-  - {type: elevator, x: 34, y: 0}
-  # plants scattered
-  - {type: plant, x: 2, y: 2}
-  - {type: plant, x: 37, y: 2}
-  - {type: plant, x: 2, y: 27}
-  - {type: plant, x: 37, y: 27}
-  - {type: plant, x: 20, y: 27}
+  - {type: elevator, x: 2, y: 0}
+  - {type: elevator, x: 8, y: 0}
+  - {type: elevator, x: 14, y: 0}
+  - {type: elevator, x: 20, y: 0}
+  - {type: elevator, x: 26, y: 0}
+  - {type: elevator, x: 32, y: 0}
+  # plants: corners + one central, instead of stranded in unused bottom space
+  - {type: plant, x: 1, y: 3}
+  - {type: plant, x: 34, y: 3}
+  - {type: plant, x: 1, y: 22}
+  - {type: plant, x: 34, y: 22}
+  - {type: plant, x: 18, y: 9}
   # water dispensers
   - {type: water_dispenser, x: 1, y: 15}
-  - {type: water_dispenser, x: 38, y: 15}
+  - {type: water_dispenser, x: 34, y: 15}
   # trash cans, here and there
-  - {type: trash_empty, x: 6, y: 10}
-  - {type: trash_full, x: 16, y: 18}
-  - {type: trash_empty, x: 26, y: 10}
-  - {type: trash_full, x: 31, y: 26}
+  - {type: trash_empty, x: 5, y: 9}
+  - {type: trash_full, x: 14, y: 16}
+  - {type: trash_empty, x: 23, y: 9}
+  - {type: trash_full, x: 28, y: 16}
   # loose papers, here and there
-  - {type: papers, x: 12, y: 11}
-  - {type: papers, x: 22, y: 19}
-  - {type: papers, x: 33, y: 11}
+  - {type: papers, x: 10, y: 8}
+  - {type: papers, x: 19, y: 17}
+  - {type: papers, x: 30, y: 9}
   # desks: 7 columns x 3 rows, indices 0-20 matching people.yaml `desk` field
-  - {type: desk, x: 4, y: 6}
-  - {type: desk, x: 9, y: 6}
-  - {type: desk, x: 14, y: 6}
-  - {type: desk, x: 19, y: 6}
-  - {type: desk, x: 24, y: 6}
-  - {type: desk, x: 29, y: 6}
-  - {type: desk, x: 34, y: 6}
-  - {type: desk, x: 4, y: 14}
-  - {type: desk, x: 9, y: 14}
-  - {type: desk, x: 14, y: 14}
-  - {type: desk, x: 19, y: 14}
-  - {type: desk, x: 24, y: 14}
-  - {type: desk, x: 29, y: 14}
-  - {type: desk, x: 34, y: 14}
-  - {type: desk, x: 4, y: 22}
-  - {type: desk, x: 9, y: 22}
-  - {type: desk, x: 14, y: 22}
-  - {type: desk, x: 19, y: 22}
-  - {type: desk, x: 24, y: 22}
-  - {type: desk, x: 29, y: 22}
-  - {type: desk, x: 34, y: 22}
+  - {type: desk, x: 2, y: 5}
+  - {type: desk, x: 7, y: 5}
+  - {type: desk, x: 12, y: 5}
+  - {type: desk, x: 17, y: 5}
+  - {type: desk, x: 22, y: 5}
+  - {type: desk, x: 27, y: 5}
+  - {type: desk, x: 32, y: 5}
+  - {type: desk, x: 2, y: 12}
+  - {type: desk, x: 7, y: 12}
+  - {type: desk, x: 12, y: 12}
+  - {type: desk, x: 17, y: 12}
+  - {type: desk, x: 22, y: 12}
+  - {type: desk, x: 27, y: 12}
+  - {type: desk, x: 32, y: 12}
+  - {type: desk, x: 2, y: 19}
+  - {type: desk, x: 7, y: 19}
+  - {type: desk, x: 12, y: 19}
+  - {type: desk, x: 17, y: 19}
+  - {type: desk, x: 22, y: 19}
+  - {type: desk, x: 27, y: 19}
+  - {type: desk, x: 32, y: 19}
