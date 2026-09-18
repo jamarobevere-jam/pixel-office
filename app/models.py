@@ -22,7 +22,7 @@ class Floorplan:
     def desk_seat_tile(desk: WorldObject) -> tuple[int, int]:
         """Tile a person sitting at this desk should render at — the chair
         spot in front of the monitor, not the desk's own (back-left) tile."""
-        return (desk.x + 1, desk.y + 1)
+        return (desk.x, desk.y + 1)
 
     def blocked_tiles(self) -> set[tuple[int, int]]:
         """Tiles occupied by furniture people shouldn't walk through."""
@@ -31,7 +31,7 @@ class Floorplan:
             if obj.type == "desk":
                 blocked.add((obj.x, obj.y))
                 blocked.add((obj.x + 1, obj.y))
-                blocked.add((obj.x + 1, obj.y + 1))  # chair
+                blocked.add((obj.x, obj.y + 1))  # chair
             elif obj.type == "elevator":
                 blocked.add((obj.x, obj.y))
                 blocked.add((obj.x + 1, obj.y))

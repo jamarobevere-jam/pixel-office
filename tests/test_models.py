@@ -19,7 +19,7 @@ def test_floorplan_blocked_tiles_covers_desk_footprint_and_chair():
     blocked = fp.blocked_tiles()
     assert (4, 6) in blocked  # desk_left
     assert (5, 6) in blocked  # desk_right
-    assert (5, 7) in blocked  # chair
+    assert (4, 7) in blocked  # chair
 
 
 def test_floorplan_blocked_tiles_covers_plants_and_water_dispensers():

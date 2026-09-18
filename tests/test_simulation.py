@@ -143,15 +143,17 @@ def test_find_path_tiles_routes_around_obstacle_wall():
 
 def test_find_path_tiles_start_tile_may_itself_be_blocked():
     # a person standing at their own desk starts on a blocked tile; the
-    # path out of it must still be found.
-    objects = [WorldObject(type="desk", x=0, y=0)]
-    fp = Floorplan(width=5, height=5, tile_size=10, objects=objects)
+    # path out of it must still be found. Desk placed off the corner so
+    # its footprint (desk_left/desk_right/chair) doesn't wall the start
+    # tile in on every side.
+    objects = [WorldObject(type="desk", x=1, y=1)]
+    fp = Floorplan(width=6, height=6, tile_size=10, objects=objects)
     sim = Simulation(people=[], floorplan=fp, interactions=[])
 
-    path = sim._find_path_tiles((0, 0), (4, 4))
+    path = sim._find_path_tiles((1, 1), (5, 5))
 
     assert path is not None
-    assert path[-1] == (4, 4)
+    assert path[-1] == (5, 5)
 
 
 def test_walking_person_moves_toward_target_and_arrives():
@@ -324,8 +326,8 @@ def test_visitor_full_lifecycle_freezes_and_releases_people():
     # let a walk itself all the way home (many small ticks, real movement)
     now = run_ticks(sim, now, 0.5, 40)
     assert a.state == "at_desk"
-    # desk is at (5,5); a person sits one tile in (the chair), at (6,6)
-    assert (int(a.x // fp.tile_size), int(a.y // fp.tile_size)) == (6, 6)
+    # desk is at (5,5); a person sits at the chair tile below it, (5,6)
+    assert (int(a.x // fp.tile_size), int(a.y // fp.tile_size)) == (5, 6)
     assert a.current_phrase is None  # arrival is silent during a visit
 
     # doors should have closed and wandering begun well before now

@@ -143,7 +143,7 @@ function drawFloorplanToOffscreen(floorplan) {
       case "desk": {
         const chair = furnitureImages.chair;
         if (chair && chair.naturalWidth) {
-          floorplanCtx.drawImage(chair, (obj.x + 1) * tile, (obj.y + 1) * tile - CHAIR_LIFT);
+          floorplanCtx.drawImage(chair, obj.x * tile, (obj.y + 1) * tile - CHAIR_LIFT);
         }
         drawTile(furnitureImages.deskLeft, obj.x, obj.y);
         drawTile(furnitureImages.deskRight, obj.x + 1, obj.y);
