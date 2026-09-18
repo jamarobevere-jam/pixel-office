@@ -39,6 +39,7 @@ const FURNITURE_FILES = {
 const MONITOR_FILES = ["Monitor1_B.png", "Monitor1_F.png", "Monitor3_off_F.png", "Monitor3_on_F.png"];
 const MONITOR_LIFT = 20; // px shifted up so the monitor sits on the desk surface
 const CHAIR_LIFT = 14; // px shifted up so the chair tucks under the monitor's tile
+const CLUTTER_SCALE = 1.7; // bins/papers drawn this many times tile size, centered
 
 const furnitureImages = {};
 let furnitureReady = false;
@@ -111,6 +112,16 @@ function drawFloorplanToOffscreen(floorplan) {
     floorplanCtx.drawImage(img, x * tile, y * tile);
   }
 
+  // Small clutter (bins, papers) reads as too tiny at native tile size on
+  // a kiosk display; draw it larger, centered on its tile.
+  function drawTileScaled(img, x, y, scale) {
+    if (!img || !img.naturalWidth) return;
+    const size = tile * scale;
+    const cx = x * tile + tile / 2;
+    const cy = y * tile + tile / 2;
+    floorplanCtx.drawImage(img, cx - size / 2, cy - size / 2, size, size);
+  }
+
   for (const obj of floorplan.objects) {
     const px = obj.x * tile;
     const py = obj.y * tile;
@@ -149,13 +160,13 @@ function drawFloorplanToOffscreen(floorplan) {
         drawBottomAnchored(furnitureImages.waterDispenser, obj.x, obj.y);
         break;
       case "trash_empty":
-        drawTile(furnitureImages.trashEmpty, obj.x, obj.y);
+        drawTileScaled(furnitureImages.trashEmpty, obj.x, obj.y, CLUTTER_SCALE);
         break;
       case "trash_full":
-        drawTile(furnitureImages.trashFull, obj.x, obj.y);
+        drawTileScaled(furnitureImages.trashFull, obj.x, obj.y, CLUTTER_SCALE);
         break;
       case "papers":
-        drawTile(furnitureImages.papers, obj.x, obj.y);
+        drawTileScaled(furnitureImages.papers, obj.x, obj.y, CLUTTER_SCALE);
         break;
       default:
         floorplanCtx.fillStyle = "#999999";
@@ -202,8 +213,12 @@ function lerp(a, b, t) {
   return a + (b - a) * t;
 }
 
-const BUBBLE_HEIGHT = 16;
-const BUBBLE_PADDING = 4;
+const FONT_SIZE = 15;
+const NAME_FONT = `${FONT_SIZE}px monospace`;
+const BUBBLE_FONT = `bold ${FONT_SIZE}px monospace`;
+const BUBBLE_HEIGHT = 24;
+const BUBBLE_TOP_OFFSET = 18; // distance from text baseline to the bubble's top edge
+const BUBBLE_PADDING = 6;
 const BUBBLE_GAP = 4; // enforced clearance between stacked bubbles
 
 function bubbleRectsOverlap(a, b) {
@@ -233,8 +248,8 @@ function layoutAndDrawBubbles(candidates) {
       const rect = {
         left: bubbleX - halfWidth,
         right: bubbleX + halfWidth,
-        top: bubbleY - 12,
-        bottom: bubbleY - 12 + BUBBLE_HEIGHT,
+        top: bubbleY - BUBBLE_TOP_OFFSET,
+        bottom: bubbleY - BUBBLE_TOP_OFFSET + BUBBLE_HEIGHT,
       };
       if (!placedRects.some((r) => bubbleRectsOverlap(rect, r))) {
         placedRects.push(rect);
@@ -242,12 +257,12 @@ function layoutAndDrawBubbles(candidates) {
       }
       bubbleY -= BUBBLE_HEIGHT + BUBBLE_GAP;
     }
-    bubbleY = Math.max(bubbleY, 12); // keep the bubble top on-canvas too
+    bubbleY = Math.max(bubbleY, BUBBLE_TOP_OFFSET); // keep the bubble top on-canvas too
 
     ctx.fillStyle = "#ffffff";
-    ctx.fillRect(bubbleX - halfWidth, bubbleY - 12, halfWidth * 2, BUBBLE_HEIGHT);
+    ctx.fillRect(bubbleX - halfWidth, bubbleY - BUBBLE_TOP_OFFSET, halfWidth * 2, BUBBLE_HEIGHT);
     ctx.fillStyle = "#000000";
-    ctx.font = "10px monospace";
+    ctx.font = BUBBLE_FONT;
     ctx.textAlign = "center";
     ctx.fillText(c.text, bubbleX, bubbleY);
   }
@@ -271,14 +286,15 @@ function drawPeople(people, factor, prevPeopleByName) {
     }
 
     ctx.fillStyle = "#ffffff";
-    ctx.font = "10px monospace";
+    ctx.font = NAME_FONT;
     ctx.textAlign = "center";
-    ctx.fillText(person.name, x, y - SPRITE_SIZE / 2 - 4);
+    ctx.fillText(person.name, x, y - SPRITE_SIZE / 2 - 6);
 
     if (person.phrase) {
+      ctx.font = BUBBLE_FONT; // measure at the font it'll actually draw with
       bubbleCandidates.push({
         x,
-        anchorY: y - SPRITE_SIZE / 2 - 20,
+        anchorY: y - SPRITE_SIZE / 2 - 26,
         text: person.phrase,
         width: ctx.measureText(person.phrase).width,
       });
