@@ -6,7 +6,7 @@ from app.models import Floorplan, Person
 WALK_SPEED_PX_PER_SEC = 60
 IDLE_MIN_SECONDS = 4
 IDLE_MAX_SECONDS = 12
-PHRASE_DURATION_SECONDS = 3
+PHRASE_DURATION_SECONDS = 6
 # Walk targets snap to tile centers, so the smallest possible non-zero
 # distance between two of them is a diagonal-adjacent pair (tile_size *
 # sqrt(2)). The threshold must clear that, or "adjacent" people never
