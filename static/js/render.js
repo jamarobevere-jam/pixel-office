@@ -215,9 +215,16 @@ function lerp(a, b, t) {
   return a + (b - a) * t;
 }
 
-const FONT_SIZE = 15;
-const NAME_FONT = `${FONT_SIZE}px monospace`;
-const BUBBLE_FONT = `bold ${FONT_SIZE}px monospace`;
+// A real pixel font reads better on a kiosk than plain monospace, but it's
+// visually heavier/wider per pixel — use a smaller point size than the
+// monospace fallback needed.
+const PIXEL_FONT_FAMILY = '"Press Start 2P", monospace';
+const FONT_SIZE = 10;
+const NAME_FONT = `${FONT_SIZE}px ${PIXEL_FONT_FAMILY}`;
+const BUBBLE_FONT = `${FONT_SIZE}px ${PIXEL_FONT_FAMILY}`;
+if (document.fonts && document.fonts.load) {
+  document.fonts.load(NAME_FONT); // kick off the fetch early; falls back to monospace until it resolves
+}
 const BUBBLE_HEIGHT = 24;
 const BUBBLE_TOP_OFFSET = 18; // distance from text baseline to the bubble's top edge
 const BUBBLE_PADDING = 6;
@@ -312,9 +319,15 @@ function drawPeople(people, factor, prevPeopleByName) {
       ctx.drawImage(sprite, x - SPRITE_SIZE / 2, y - SPRITE_SIZE / 2, SPRITE_SIZE, SPRITE_SIZE);
     }
 
-    ctx.fillStyle = "#ffffff";
     ctx.font = NAME_FONT;
     ctx.textAlign = "center";
+    // Black text alone would be hard to read straight on the floor texture;
+    // a thin white outline keeps it legible on any background while the
+    // fill itself stays black as asked.
+    ctx.lineWidth = 3;
+    ctx.strokeStyle = "#ffffff";
+    ctx.strokeText(person.name, x, y - SPRITE_SIZE / 2 - 6);
+    ctx.fillStyle = "#000000";
     ctx.fillText(person.name, x, y - SPRITE_SIZE / 2 - 6);
 
     if (person.phrase) {
