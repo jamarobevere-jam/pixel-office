@@ -6,7 +6,17 @@ WebSocket to an HTML5 Canvas frontend.
 
 ## Run locally
 
+### Devcontainers
+Have the docker installed. Then open project in VSCode -> Reopen in Containers.
+This will set up all the requirements.
+
+## Local environment
+Install requirements: 
+
     pip install -r requirements.txt
+
+### Run the app
+
     python -m uvicorn app.main:app --host 127.0.0.1 --port 8000
 
 Open http://localhost:8000
@@ -21,7 +31,7 @@ Edit `data/people.yaml`, `data/floorplan.yaml`, or `data/interactions.yaml`
 — no code changes needed. Restart the server to pick up changes.
 
 ## Pixel art
-All available art in in data/characters or data/furniture
+All available art in in data/characters or data/furniture.
 
 ## Deploy to Azure App Service
 
