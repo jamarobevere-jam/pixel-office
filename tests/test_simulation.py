@@ -21,7 +21,7 @@ def make_floorplan_with_elevator():
 
 
 def make_visitor():
-    return Visitor(name="Frits", sprite="frits.png", phrases=["Best of breed", "Bullshit!"])
+    return Visitor(name="Ghost", sprite="ghost.png", phrases=["Best of breed", "Bullshit!"])
 
 
 def run_ticks(sim, start_now, dt, count):
@@ -279,7 +279,7 @@ def test_visitor_not_active_before_trigger_time():
     assert sim.visitor_active is False
     assert sim.visitor_visible is False
     assert sim.open_elevator is None
-    assert "Frits" not in [p["name"] for p in sim.to_state()["people"]]
+    assert "Ghost" not in [p["name"] for p in sim.to_state()["people"]]
 
 
 def test_visitor_entrance_interrupts_talking_person():
@@ -320,7 +320,7 @@ def test_visitor_full_lifecycle_freezes_and_releases_people():
     assert sim.visitor_visible is True
     assert sim.open_elevator == (0, 0)
     assert sim.to_state()["open_elevator"] == {"x": 0, "y": 0}
-    assert any(p["name"] == "Frits" for p in sim.to_state()["people"])
+    assert any(p["name"] == "Ghost" for p in sim.to_state()["people"])
     assert a.state == "walking"
 
     # let a walk itself all the way home (many small ticks, real movement)
@@ -352,7 +352,7 @@ def test_visitor_full_lifecycle_freezes_and_releases_people():
     assert sim.visitor_visible is False
     assert sim.open_elevator is None
     assert sim._visitor_phase == "away"
-    assert not any(p["name"] == "Frits" for p in sim.to_state()["people"])
+    assert not any(p["name"] == "Ghost" for p in sim.to_state()["people"])
 
     # a is released, not stuck: it either has a fresh idle timer running or
     # has already cycled through one and started walking again on its own

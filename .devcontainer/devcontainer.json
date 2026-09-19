@@ -6,18 +6,23 @@
       "version": "lts"
     }
   },
-  "forwardPorts": [8000],
+  "forwardPorts": [8000, 8001],
   "portsAttributes": {
     "8000": {
       "label": "Pixel Office web",
       "onAutoForward": "notify"
-    }
+    },
+    "8001": {
+      "label": "Pixel Office web",
+      "onAutoForward": "notify"
+    }    
   },
   "postCreateCommand": "pip install --no-cache-dir -r requirements.txt && npm install -g @anthropic-ai/claude-code",
   "customizations": {
     "vscode": {
       "extensions": [
-        "ms-python.python"
+        "ms-python.python",
+        "Anthropic.claude-code"
       ]
     }
   },

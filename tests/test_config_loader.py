@@ -69,16 +69,16 @@ exchanges:
 """
 
 VISITOR_YAML = """
-name: Frits
-sprite: frits.png
+name: Ghost
+sprite: ghost.png
 phrases:
   - "Best of breed"
   - "Bullshit!"
 """
 
 VISITOR_YAML_MALFORMED = """
-name: Frits
-sprite: frits.png
+name: Ghost
+sprite: ghost.png
 """
 
 
@@ -174,8 +174,8 @@ def test_load_visitor(tmp_path):
     p = tmp_path / "visitor.yaml"
     p.write_text(VISITOR_YAML)
     visitor = load_visitor(str(p))
-    assert visitor.name == "Frits"
-    assert visitor.sprite == "frits.png"
+    assert visitor.name == "Ghost"
+    assert visitor.sprite == "ghost.png"
     assert visitor.phrases == ["Best of breed", "Bullshit!"]
 
 

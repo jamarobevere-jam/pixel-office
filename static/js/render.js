@@ -39,11 +39,14 @@ const FURNITURE_FILES = {
 };
 const MONITOR_FILES = ["Monitor1_B.png", "Monitor1_F.png", "Monitor3_off_F.png", "Monitor3_on_F.png"];
 const MONITOR_LIFT = 20; // px shifted up so the monitor sits on the desk surface
-const CHAIR_LIFT = 14; // px shifted up so the chair tucks under the monitor's tile
+const CHAIR_LIFT = 16; // px shifted up so the chair tucks under the monitor's tile
 const CHAIR_RIGHT_SHIFT = 8; // px nudged right to re-align with the current desk art
 const KEYBOARD_LIFT = 10; // px shifted up so the keyboard/mouse sit on the desk surface
+const KEYBOARD_RIGHT_SHIFT = 8; // px nudged right to re-align with the current desk art
 const CLUTTER_SCALE = 1.7; // bins/papers drawn this many times tile size, centered
-const SEATED_LIFT = 8; // px a person's sprite is nudged up while at_desk, to read as sitting in the chair
+const SEATED_LIFT = 16; // px a person's sprite is nudged up while at_desk, to read as sitting in the chair
+const SEATED_RIGHT_SHIFT = 8; // px nudged right to re-align with the current desk art
+
 
 const furnitureImages = {};
 let furnitureReady = false;
@@ -157,7 +160,7 @@ function drawFloorplanToOffscreen(floorplan) {
         }
         const keyboardMouse = furnitureImages.keyboardMouse;
         if (keyboardMouse && keyboardMouse.naturalWidth) {
-          floorplanCtx.drawImage(keyboardMouse, obj.x * tile, obj.y * tile - KEYBOARD_LIFT);
+          floorplanCtx.drawImage(keyboardMouse, obj.x * tile + KEYBOARD_RIGHT_SHIFT, obj.y * tile - KEYBOARD_LIFT);
         }
         break;
       }
@@ -224,8 +227,8 @@ function lerp(a, b, t) {
 // A real pixel font reads better on a kiosk than plain monospace, but it's
 // visually heavier/wider per pixel — use a smaller point size than the
 // monospace fallback needed.
-const PIXEL_FONT_FAMILY = '"Press Start 2P", monospace';
-const FONT_SIZE = 10;
+const PIXEL_FONT_FAMILY = '"Geist Pixel", monospace';
+const FONT_SIZE = 18;
 const NAME_FONT = `${FONT_SIZE}px ${PIXEL_FONT_FAMILY}`;
 const BUBBLE_FONT = `${FONT_SIZE}px ${PIXEL_FONT_FAMILY}`;
 if (document.fonts && document.fonts.load) {
@@ -317,6 +320,7 @@ function drawPeople(people, factor, prevPeopleByName) {
       y = lerp(prev.y, person.y, factor);
     }
     if (person.state === "at_desk") {
+      x += SEATED_RIGHT_SHIFT; // purely visual: reads as sitting in the chair, not floating to the left of it
       y -= SEATED_LIFT; // purely visual: reads as sitting in the chair, not floating below it
     }
 
@@ -330,8 +334,8 @@ function drawPeople(people, factor, prevPeopleByName) {
     // Black text alone would be hard to read straight on the floor texture;
     // a thin white outline keeps it legible on any background while the
     // fill itself stays black as asked.
-    ctx.lineWidth = 3;
-    ctx.strokeStyle = "#ffffff";
+    ctx.lineWidth = 2;
+    ctx.strokeStyle = "#f4e1ab";
     ctx.strokeText(person.name, x, y - SPRITE_SIZE / 2 - 6);
     ctx.fillStyle = "#000000";
     ctx.fillText(person.name, x, y - SPRITE_SIZE / 2 - 6);
