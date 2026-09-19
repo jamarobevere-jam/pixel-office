@@ -28,6 +28,7 @@ const FURNITURE_FILES = {
   deskLeft: "desk_left.png",
   deskRight: "desk_right.png",
   chair: "chair_gray_B.png",
+  keyboardMouse: "keyboard_mouse_black.png",
   plant: "plant.png",
   waterDispenser: "Water_dispenser.png",
   trashEmpty: "trash_can_empty.png",
@@ -40,6 +41,7 @@ const MONITOR_FILES = ["Monitor1_B.png", "Monitor1_F.png", "Monitor3_off_F.png",
 const MONITOR_LIFT = 20; // px shifted up so the monitor sits on the desk surface
 const CHAIR_LIFT = 14; // px shifted up so the chair tucks under the monitor's tile
 const CHAIR_RIGHT_SHIFT = 8; // px nudged right to re-align with the current desk art
+const KEYBOARD_LIFT = 10; // px shifted up so the keyboard/mouse sit on the desk surface
 const CLUTTER_SCALE = 1.7; // bins/papers drawn this many times tile size, centered
 const SEATED_LIFT = 8; // px a person's sprite is nudged up while at_desk, to read as sitting in the chair
 
@@ -152,6 +154,10 @@ function drawFloorplanToOffscreen(floorplan) {
         const monitor = pickMonitor(obj.x, obj.y);
         if (monitor && monitor.naturalWidth) {
           floorplanCtx.drawImage(monitor, (obj.x + 1) * tile, obj.y * tile - MONITOR_LIFT);
+        }
+        const keyboardMouse = furnitureImages.keyboardMouse;
+        if (keyboardMouse && keyboardMouse.naturalWidth) {
+          floorplanCtx.drawImage(keyboardMouse, obj.x * tile, obj.y * tile - KEYBOARD_LIFT);
         }
         break;
       }
