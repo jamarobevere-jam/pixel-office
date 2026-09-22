@@ -4,6 +4,7 @@ from collections import deque
 from app.models import Floorplan, Person, Visitor
 
 WALK_SPEED_PX_PER_SEC = 60
+RUNNING_SPEED_PX_PER_SEC = 120
 IDLE_MIN_SECONDS = 4
 IDLE_MAX_SECONDS = 12
 PHRASE_DURATION_SECONDS = 6
@@ -132,6 +133,8 @@ class Simulation:
             self._tick_at_desk(person, now)
         elif person.state == "walking":
             self._tick_walking(person, dt, now)
+        elif person.state == "running":
+            self._tick_running(person, dt, now)
         elif person.state == "talking":
             self._tick_talking(person, now)
 
@@ -176,6 +179,18 @@ class Simulation:
         person.target_x, person.target_y = waypoints[0]
         person.path = waypoints[1:]
         person.state = "walking"
+
+    def _begin_run_to(self, person: Person, goal_tile: tuple[int, int]) -> None:
+            tile_size = self.floorplan.tile_size
+            start_tile = (int(person.x // tile_size), int(person.y // tile_size))
+            tiles = self._find_path_tiles(start_tile, goal_tile) or [goal_tile]
+            waypoints = [
+                (tx * tile_size + tile_size / 2, ty * tile_size + tile_size / 2)
+                for tx, ty in tiles
+            ]
+            person.target_x, person.target_y = waypoints[0]
+            person.path = waypoints[1:]
+            person.state = "running"
 
     def _pick_walk_target(self, person: Person, tile_size: int) -> tuple[int, int]:
         others_idle = [p for p in self.people if p is not person and p.state == "at_desk"]
@@ -274,6 +289,30 @@ class Simulation:
         else:
             person.x += dx / dist * step
             person.y += dy / dist * step
+
+    def _tick_running(self, person: Person, dt: float, now: float) -> None:
+            dx = person.target_x - person.x
+            dy = person.target_y - person.y
+            dist = (dx ** 2 + dy ** 2) ** 0.5
+            step = RUNNING_SPEED_PX_PER_SEC * dt
+            if dist <= step:
+                person.x = person.target_x
+                person.y = person.target_y
+                if person.path:
+                    person.target_x, person.target_y = person.path.pop(0)
+                    return
+                person.target_x = None
+                person.target_y = None
+                person.path = None
+                person.state = "at_desk"
+                is_visitor = person is self.visitor
+                phrase_chance = VISITOR_PHRASE_CHANCE if is_visitor else 0.5
+                if (is_visitor or not self.visitor_active) and self.rng.random() < phrase_chance:
+                    person.current_phrase = self.rng.choice(person.idle_phrases)
+                    person.phrase_expires_at = now + PHRASE_DURATION_SECONDS
+            else:
+                person.x += dx / dist * step
+                person.y += dy / dist * step
 
     def _tick_talking(self, person: Person, now: float) -> None:
         talk_until = self._talk_until.get(person.name)
@@ -400,7 +439,7 @@ class Simulation:
             self._talk_until.pop(person.name, None)
             self._idle_until.pop(person.name, None)
             desk_obj = desks[person.desk]
-            self._begin_walk_to(person, self.floorplan.desk_seat_tile(desk_obj))
+            self._begin_run_to(person, self.floorplan.desk_seat_tile(desk_obj))
 
     def to_state(self) -> dict:
         people_state = [self._person_state(p) for p in self.people]
