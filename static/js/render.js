@@ -247,8 +247,11 @@ if (document.fonts && document.fonts.load) {
 }
 const BUBBLE_HEIGHT = 24;
 const BUBBLE_TOP_OFFSET = 17; // distance from text baseline to the bubble's top edge
-const BUBBLE_PADDING = 6;
+const BUBBLE_PADDING = 10; // roomy enough that text clears the rounded ends
 const BUBBLE_GAP = 4; // enforced clearance between stacked bubbles
+const NAME_PILL_HEIGHT = 18;
+const NAME_PILL_TOP_OFFSET = 14; // distance from name baseline to the pill's top edge
+const NAME_PILL_PADDING = 5;
 
 // When did each person's *current* phrase first appear? Used so a
 // staggered conversation's opener (revealed first) stacks above the reply
@@ -311,7 +314,9 @@ function layoutAndDrawBubbles(candidates) {
     bubbleY = Math.max(bubbleY, BUBBLE_TOP_OFFSET); // keep the bubble top on-canvas too
 
     ctx.fillStyle = "#ffffff";
-    ctx.fillRect(bubbleX - halfWidth, bubbleY - BUBBLE_TOP_OFFSET, halfWidth * 2, BUBBLE_HEIGHT);
+    ctx.beginPath();
+    ctx.roundRect(bubbleX - halfWidth, bubbleY - BUBBLE_TOP_OFFSET, halfWidth * 2, BUBBLE_HEIGHT, BUBBLE_HEIGHT / 2);
+    ctx.fill();
     ctx.fillStyle = "#000000";
     ctx.font = BUBBLE_FONT;
     ctx.textAlign = "center";
@@ -340,22 +345,27 @@ function drawPeople(people, factor, prevPeopleByName) {
       ctx.drawImage(sprite, x - SPRITE_SIZE / 2, y - SPRITE_SIZE / 2, SPRITE_SIZE, SPRITE_SIZE);
     }
 
-    ctx.font = NAME_FONT;
-    ctx.textAlign = "center";
-    // Black text alone would be hard to read straight on the floor texture;
-    // a thin white outline keeps it legible on any background while the
-    // fill itself stays black as asked.
-    ctx.lineWidth = 2;
-    ctx.strokeStyle = "#f4e1ab";
-    ctx.strokeText(person.name, x, y - SPRITE_SIZE / 2 - 6);
-    ctx.fillStyle = "#000000";
-    ctx.fillText(person.name, x, y - SPRITE_SIZE / 2 - 6);
+    // White text on a semi-transparent dark pill stays legible on any part
+    // of the floor texture or furniture behind it. The visitor (ghost) is
+    // anonymous, so gets no name pill at all.
+    if (!person.visitor && person.name) {
+      ctx.font = NAME_FONT;
+      ctx.textAlign = "center";
+      const nameY = y - SPRITE_SIZE / 2 - 6;
+      const pillWidth = ctx.measureText(person.name).width + NAME_PILL_PADDING * 2;
+      ctx.fillStyle = "rgba(0, 0, 0, 0.6)";
+      ctx.beginPath();
+      ctx.roundRect(x - pillWidth / 2, nameY - NAME_PILL_TOP_OFFSET, pillWidth, NAME_PILL_HEIGHT, NAME_PILL_HEIGHT / 2);
+      ctx.fill();
+      ctx.fillStyle = "#ffffff";
+      ctx.fillText(person.name, x, nameY);
+    }
 
     if (person.phrase) {
       ctx.font = BUBBLE_FONT; // measure at the font it'll actually draw with
       bubbleCandidates.push({
         x,
-        anchorY: y - SPRITE_SIZE / 2 - 26,
+        anchorY: y - SPRITE_SIZE / 2 - 29, // clears the name pill by 2px
         text: person.phrase,
         width: ctx.measureText(person.phrase).width,
         since: phraseSince.get(person.name)?.since ?? performance.now(),
