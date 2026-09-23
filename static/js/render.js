@@ -319,7 +319,7 @@ function drawPeople(people, factor, prevPeopleByName) {
       x = lerp(prev.x, person.x, factor);
       y = lerp(prev.y, person.y, factor);
     }
-    if (person.state === "at_desk") {
+    if (person.state === "at_desk" && !person.visitor) {
       x += SEATED_RIGHT_SHIFT; // purely visual: reads as sitting in the chair, not floating to the left of it
       y -= SEATED_LIFT; // purely visual: reads as sitting in the chair, not floating below it
     }

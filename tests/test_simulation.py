@@ -299,7 +299,7 @@ def test_visitor_entrance_interrupts_talking_person():
 
     assert sim.visitor_active is True
     assert sim.open_elevator == (0, 0)
-    assert a.state == "walking"
+    assert a.state == "running"
     assert a.current_phrase is None
     assert a.name not in sim._talk_until
 
@@ -321,7 +321,9 @@ def test_visitor_full_lifecycle_freezes_and_releases_people():
     assert sim.open_elevator == (0, 0)
     assert sim.to_state()["open_elevator"] == {"x": 0, "y": 0}
     assert any(p["name"] == "Ghost" for p in sim.to_state()["people"])
-    assert a.state == "walking"
+    flags = {p["name"]: p["visitor"] for p in sim.to_state()["people"]}
+    assert flags == {"A": False, "Ghost": True}
+    assert a.state == "running"
 
     # let a walk itself all the way home (many small ticks, real movement)
     now = run_ticks(sim, now, 0.5, 40)

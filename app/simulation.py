@@ -463,8 +463,7 @@ class Simulation:
             ),
         }
 
-    @staticmethod
-    def _person_state(p: Person) -> dict:
+    def _person_state(self, p: Person) -> dict:
         return {
             "name": p.name,
             "x": p.x,
@@ -472,4 +471,7 @@ class Simulation:
             "state": p.state,
             "sprite": p.sprite,
             "phrase": p.current_phrase,
+            # The visitor reuses "at_desk" for his short pauses but never
+            # sits, so the client must not apply the seated sprite offset.
+            "visitor": p is self.visitor,
         }
