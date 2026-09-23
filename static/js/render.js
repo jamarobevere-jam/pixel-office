@@ -187,23 +187,34 @@ function drawFloorplanToOffscreen(floorplan) {
 
   cachedFloorplan = floorplan;
 
-  if (canvas.width !== floorplanCanvas.width || canvas.height !== floorplanCanvas.height) {
-    canvas.width = floorplanCanvas.width;
-    canvas.height = floorplanCanvas.height;
-  }
+  logicalWidth = floorplanCanvas.width;
+  logicalHeight = floorplanCanvas.height;
   scaleCanvasToFit();
 }
 
-// Scales the canvas's CSS box (not its pixel buffer) to fill the viewport
-// while preserving the floorplan's aspect ratio, so the whole office is
-// always visible and as large as the screen allows — relying on
-// object-fit for this proved unreliable across environments, so the scale
-// is computed and applied directly.
+// All drawing code works in floorplan pixels ("logical" units). The canvas
+// buffer, though, is sized to its real on-screen pixel size so text renders
+// crisp instead of being drawn small and blown up; sprites keep their
+// pixel-art look via imageSmoothingEnabled = false.
+let logicalWidth = 0;
+let logicalHeight = 0;
+let renderScale = 1; // buffer pixels per logical pixel
+
+// Scales the canvas to fill the viewport while preserving the floorplan's
+// aspect ratio, so the whole office is always visible and as large as the
+// screen allows — relying on object-fit for this proved unreliable across
+// environments, so the scale is computed and applied directly.
 function scaleCanvasToFit() {
-  if (!canvas.width || !canvas.height) return;
-  const scale = Math.min(window.innerWidth / canvas.width, window.innerHeight / canvas.height);
-  canvas.style.width = `${canvas.width * scale}px`;
-  canvas.style.height = `${canvas.height * scale}px`;
+  if (!logicalWidth || !logicalHeight) return;
+  const cssScale = Math.min(window.innerWidth / logicalWidth, window.innerHeight / logicalHeight);
+  const cssWidth = Math.floor(logicalWidth * cssScale);
+  const cssHeight = Math.floor(logicalHeight * cssScale);
+  const dpr = window.devicePixelRatio || 1;
+  canvas.style.width = `${cssWidth}px`;
+  canvas.style.height = `${cssHeight}px`;
+  canvas.width = Math.round(cssWidth * dpr);
+  canvas.height = Math.round(cssHeight * dpr);
+  renderScale = canvas.width / logicalWidth;
 }
 
 window.addEventListener("resize", scaleCanvasToFit);
@@ -224,18 +235,18 @@ function lerp(a, b, t) {
   return a + (b - a) * t;
 }
 
-// A real pixel font reads better on a kiosk than plain monospace, but it's
-// visually heavier/wider per pixel — use a smaller point size than the
-// monospace fallback needed.
-const PIXEL_FONT_FAMILY = '"Geist Pixel", monospace';
-const FONT_SIZE = 18;
+// VT323 is a narrow, tall pixel font (loaded in index.html): reads well on a
+// kiosk and fits long phrases, but its glyphs are small for their point
+// size, so it needs a larger size than a regular font would.
+const PIXEL_FONT_FAMILY = '"VT323", monospace';
+const FONT_SIZE = 22;
 const NAME_FONT = `${FONT_SIZE}px ${PIXEL_FONT_FAMILY}`;
 const BUBBLE_FONT = `${FONT_SIZE}px ${PIXEL_FONT_FAMILY}`;
 if (document.fonts && document.fonts.load) {
   document.fonts.load(NAME_FONT); // kick off the fetch early; falls back to monospace until it resolves
 }
 const BUBBLE_HEIGHT = 24;
-const BUBBLE_TOP_OFFSET = 18; // distance from text baseline to the bubble's top edge
+const BUBBLE_TOP_OFFSET = 17; // distance from text baseline to the bubble's top edge
 const BUBBLE_PADDING = 6;
 const BUBBLE_GAP = 4; // enforced clearance between stacked bubbles
 
@@ -282,8 +293,8 @@ function layoutAndDrawBubbles(candidates) {
     // the whole canvas, then clamp the bubble's horizontal center so its
     // full width stays on-canvas even when the speaker is right at the
     // (now edge-avoiding, but not guaranteed for arbitrary text) border.
-    const halfWidth = Math.min(c.width / 2 + BUBBLE_PADDING, canvas.width / 2);
-    const bubbleX = Math.min(Math.max(c.x, halfWidth), canvas.width - halfWidth);
+    const halfWidth = Math.min(c.width / 2 + BUBBLE_PADDING, logicalWidth / 2);
+    const bubbleX = Math.min(Math.max(c.x, halfWidth), logicalWidth - halfWidth);
     for (let attempt = 0; attempt < 20; attempt++) {
       const rect = {
         left: bubbleX - halfWidth,
@@ -371,6 +382,9 @@ function render() {
       drawFloorplanToOffscreen(latestState.floorplan);
     }
 
+    // Resizing the buffer resets context state, so reapply every frame.
+    ctx.setTransform(renderScale, 0, 0, renderScale, 0, 0);
+    ctx.imageSmoothingEnabled = false;
     ctx.drawImage(floorplanCanvas, 0, 0);
     drawOpenElevator(latestState.open_elevator, latestState.floorplan.tile_size);
 
