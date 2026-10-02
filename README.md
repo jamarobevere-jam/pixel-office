@@ -11,6 +11,12 @@ Idea and cool features made without AI: https://github.com/luisollero
 
 First version: Claude Code and https://github.com/gunnhildr
 
+## Cloud deployment
+Automatically on push to main. 
+
+https://pixel-office-latest.onrender.com/
+
+
 ## Run locally
 
 ### Devcontainers
