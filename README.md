@@ -38,6 +38,8 @@ Edit `data/people.yaml`, `data/floorplan.yaml`, or `data/interactions.yaml`
 ## Pixel art
 All available art in in data/characters or data/furniture.
 
+All characters made in here https://www.avatarsinpixels.com/chibi/clothing/Body
+
 ## Deploy to Azure App Service
 
 Build the image, push it to Azure Container Registry (ACR), and point an
