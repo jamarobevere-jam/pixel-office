@@ -6,6 +6,7 @@ WebSocket to an HTML5 Canvas frontend.
 
 # Credits
 Idea and cool features made without AI: https://github.com/luisollero
+
 First version: Claude Code and https://github.com/gunnhildr
 
 ## Run locally
