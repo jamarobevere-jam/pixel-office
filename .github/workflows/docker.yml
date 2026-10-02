@@ -2,9 +2,9 @@ name: Build and push Docker image
 
 on:
   push:
-    branches: [pixel-office]
+    branches: [main]
   pull_request:
-    branches: [pixel-office]
+    branches: [main]
   workflow_dispatch:
 
 env:
