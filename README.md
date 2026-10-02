@@ -4,6 +4,10 @@ Pixelart office simulation for company monitor displays. 21 people wander,
 idle at desks, and occasionally exchange scripted lines — all live over a
 WebSocket to an HTML5 Canvas frontend.
 
+# Credits
+Idea and cool features made without AI: https://github.com/luisollero
+First version: Claude Code and https://github.com/gunnhildr
+
 ## Run locally
 
 ### Devcontainers
