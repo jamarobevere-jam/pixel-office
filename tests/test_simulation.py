@@ -129,6 +129,29 @@ def test_visitor_does_not_assign_a_desk_to_deskless_person():
     assert jessica.target_y is None
 
 
+def test_deskless_person_runs_to_the_nearest_plant_during_a_visit():
+    fp = Floorplan(
+        width=12,
+        height=12,
+        tile_size=32,
+        objects=[
+            WorldObject(type="plant", x=1, y=1),
+            WorldObject(type="plant", x=8, y=8),
+            WorldObject(type="desk", x=5, y=5),
+        ],
+    )
+    jessica = make_person("Jessica", 7 * 32 + 16, 8 * 32 + 16)
+    jessica.desk = None
+    sim = Simulation(people=[jessica], floorplan=fp, interactions=[])
+
+    sim._send_everyone_to_desk(now=0.0)
+
+    assert jessica.state == "running"
+    while jessica.state == "running":
+        sim._tick_running(jessica, dt=1.0, now=0.0)
+    assert (jessica.x, jessica.y) == (8 * 32 + 16, 8 * 32 + 16)
+
+
 def test_walk_target_tiles_exclude_the_outer_border():
     # a person idling on the outermost ring of tiles would render with
     # their sprite (wider than half a tile) or speech bubble partly off

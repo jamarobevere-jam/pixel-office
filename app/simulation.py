@@ -450,10 +450,22 @@ class Simulation:
             self._talk_until.pop(person.name, None)
             self._idle_until.pop(person.name, None)
             if person.desk is None:
-                person.target_x = None
-                person.target_y = None
-                person.path = None
-                person.state = "at_desk"
+                plants = [obj for obj in self.floorplan.objects if obj.type == "plant"]
+                if plants:
+                    tile_size = self.floorplan.tile_size
+                    plant = min(
+                        plants,
+                        key=lambda obj: (
+                            (obj.x * tile_size + tile_size / 2 - person.x) ** 2
+                            + (obj.y * tile_size + tile_size / 2 - person.y) ** 2
+                        ),
+                    )
+                    self._begin_run_to(person, (plant.x, plant.y))
+                else:
+                    person.target_x = None
+                    person.target_y = None
+                    person.path = None
+                    person.state = "at_desk"
                 continue
             desk_obj = desks[person.desk]
             self._begin_run_to(person, self.floorplan.desk_seat_tile(desk_obj))
