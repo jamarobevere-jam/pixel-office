@@ -46,7 +46,7 @@ class Floorplan:
 class Person:
     name: str
     sprite: str
-    desk: int
+    desk: int | None
     idle_phrases: list[str]
     x: float
     y: float
@@ -56,6 +56,7 @@ class Person:
     current_phrase: str | None
     phrase_expires_at: float | None
     path: list[tuple[float, float]] | None = None
+    idle_phrase_weights: list[float] | None = None
 
 
 @dataclass

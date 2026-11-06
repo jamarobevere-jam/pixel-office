@@ -1,8 +1,8 @@
 # Pixel Office
 
-Pixelart office simulation for company monitor displays. 21 people wander,
-idle at desks, and occasionally exchange scripted lines — all live over a
-WebSocket to an HTML5 Canvas frontend.
+Pixelart office simulation for company monitor displays. 22 people wander,
+idle, and occasionally exchange scripted lines; 21 have assigned desks. All
+live over a WebSocket to an HTML5 Canvas frontend.
 
 <img width="2585" height="1726" alt="image" src="https://github.com/user-attachments/assets/1ee120ed-2e10-42e7-b68e-f7671e4aa6da" />
 

@@ -335,7 +335,7 @@ function drawPeople(people, factor, prevPeopleByName) {
       x = lerp(prev.x, person.x, factor);
       y = lerp(prev.y, person.y, factor);
     }
-    if (person.state === "at_desk" && !person.visitor) {
+    if (person.state === "at_desk" && person.has_desk) {
       x += SEATED_RIGHT_SHIFT; // purely visual: reads as sitting in the chair, not floating to the left of it
       y -= SEATED_LIFT; // purely visual: reads as sitting in the chair, not floating below it
     }
@@ -376,6 +376,17 @@ function drawPeople(people, factor, prevPeopleByName) {
   layoutAndDrawBubbles(bubbleCandidates);
 }
 
+function drawForegroundPlants(floorplan) {
+  const plant = furnitureImages.plant;
+  if (!plant || !plant.naturalWidth) return;
+  const tile = floorplan.tile_size;
+  for (const obj of floorplan.objects) {
+    if (obj.type === "plant") {
+      ctx.drawImage(plant, obj.x * tile, (obj.y + 1) * tile - plant.naturalHeight);
+    }
+  }
+}
+
 // The cached offscreen floorplan always draws elevators closed (door state
 // isn't part of floorplan.objects); an open elevator is drawn fresh each
 // frame on top, from the WebSocket state's separate open_elevator field.
@@ -407,6 +418,7 @@ function render() {
     }
 
     drawPeople(latestState.people, factor, prevPeopleByName);
+    drawForegroundPlants(latestState.floorplan);
   }
   requestAnimationFrame(render);
 }

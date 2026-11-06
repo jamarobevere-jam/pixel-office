@@ -35,6 +35,19 @@ people:
       - "It works on my machine"
 """
 
+PEOPLE_YAML_DESKLESS = """
+people:
+  - name: Jessica
+    sprite: jessica.png
+    desk: null
+    spawn_tile: [2, 2]
+    idle_phrases:
+      - "Is this a Talos problem?"
+      - "I have questions, friends."
+      - "I’m sure this is documented somewhere."
+    idle_phrase_weights: [3, 1, 1]
+"""
+
 PEOPLE_YAML_BAD_DESK = """
 people:
   - name: Sebastian
@@ -108,6 +121,27 @@ def test_load_people_sets_initial_position_at_desk_center(tmp_path):
     # it, (4,7), tile_size 32 -> center (144, 240)
     assert sebastian.x == 4 * 32 + 16
     assert sebastian.y == 7 * 32 + 16
+
+
+def test_load_people_supports_deskless_person_spawn_tile(tmp_path):
+    fp_path = tmp_path / "floorplan.yaml"
+    fp_path.write_text(FLOORPLAN_YAML)
+    fp = load_floorplan(str(fp_path))
+
+    people_path = tmp_path / "people.yaml"
+    people_path.write_text(PEOPLE_YAML_DESKLESS)
+    people = load_people(str(people_path), fp)
+
+    jessica = people[0]
+    assert jessica.name == "Jessica"
+    assert jessica.desk is None
+    assert (jessica.x, jessica.y) == (2 * 32 + 16, 2 * 32 + 16)
+    assert jessica.idle_phrases == [
+      "Is this a Talos problem?",
+      "I have questions, friends.",
+      "I’m sure this is documented somewhere.",
+    ]
+    assert jessica.idle_phrase_weights == [3, 1, 1]
 
 
 def test_load_people_raises_on_bad_desk_index(tmp_path):

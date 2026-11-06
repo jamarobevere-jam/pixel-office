@@ -1,3 +1,5 @@
+import math
+
 import yaml
 
 from app.models import Floorplan, Person, Visitor, WorldObject
@@ -42,28 +44,59 @@ def load_people(path: str, floorplan: Floorplan) -> list[Person]:
     seen_names: set[str] = set()
     try:
         for entry in data["people"]:
-            desk_index = entry["desk"]
-            if not (0 <= desk_index < len(desks)):
-                raise ConfigError(
-                    f"Person '{entry.get('name')}' has invalid desk index "
-                    f"{desk_index}; floorplan has {len(desks)} desks"
-                )
+            if not isinstance(entry, dict):
+                raise ConfigError(f"Malformed person entry in {path}; expected a mapping")
+            desk_index = entry.get("desk")
+            if desk_index is None:
+                try:
+                    spawn_x, spawn_y = entry["spawn_tile"]
+                    if not (0 <= spawn_x < floorplan.width and 0 <= spawn_y < floorplan.height):
+                        raise ValueError
+                except (KeyError, TypeError, ValueError):
+                    raise ConfigError(
+                        f"Person '{entry.get('name')}' without a desk must have a valid spawn_tile"
+                    ) from None
+                cx = spawn_x * floorplan.tile_size + floorplan.tile_size / 2
+                cy = spawn_y * floorplan.tile_size + floorplan.tile_size / 2
+            else:
+                if not isinstance(desk_index, int) or not (0 <= desk_index < len(desks)):
+                    raise ConfigError(
+                        f"Person '{entry.get('name')}' has invalid desk index "
+                        f"{desk_index}; floorplan has {len(desks)} desks"
+                    )
+                desk_obj = desks[desk_index]
+                seat_x, seat_y = floorplan.desk_seat_tile(desk_obj)
+                cx = seat_x * floorplan.tile_size + floorplan.tile_size / 2
+                cy = seat_y * floorplan.tile_size + floorplan.tile_size / 2
             name = entry["name"]
             if name in seen_names:
                 raise ConfigError(
                     f"Duplicate person name '{name}' in {path}; names must be unique"
                 )
             seen_names.add(name)
-            desk_obj = desks[desk_index]
-            seat_x, seat_y = floorplan.desk_seat_tile(desk_obj)
-            cx = seat_x * floorplan.tile_size + floorplan.tile_size / 2
-            cy = seat_y * floorplan.tile_size + floorplan.tile_size / 2
+            idle_phrases = list(entry["idle_phrases"])
+            idle_phrase_weights = entry.get("idle_phrase_weights")
+            if idle_phrase_weights is not None and (
+                not isinstance(idle_phrase_weights, list)
+                or len(idle_phrase_weights) != len(idle_phrases)
+                or any(
+                    not isinstance(weight, (int, float))
+                    or not math.isfinite(weight)
+                    or weight < 0
+                    for weight in idle_phrase_weights
+                )
+                or not any(weight > 0 for weight in idle_phrase_weights)
+            ):
+                raise ConfigError(
+                    f"Person '{name}' must have one non-negative idle phrase weight "
+                    "per phrase, with at least one positive weight"
+                )
             people.append(
                 Person(
                     name=name,
                     sprite=entry["sprite"],
                     desk=desk_index,
-                    idle_phrases=list(entry["idle_phrases"]),
+                    idle_phrases=idle_phrases,
                     x=cx,
                     y=cy,
                     state="at_desk",
@@ -71,6 +104,7 @@ def load_people(path: str, floorplan: Floorplan) -> list[Person]:
                     target_y=None,
                     current_phrase=None,
                     phrase_expires_at=None,
+                    idle_phrase_weights=idle_phrase_weights,
                 )
             )
     except (KeyError, TypeError) as e:

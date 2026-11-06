@@ -83,6 +83,52 @@ def test_at_desk_person_picks_walk_target_off_blocked_tiles():
     raise AssertionError("person never started walking within the tick budget")
 
 
+def test_deskless_person_says_idle_phrase_after_roaming():
+    jessica = make_person("Jessica", 16, 16, state="walking")
+    jessica.desk = None
+    jessica.idle_phrases = ["Is this a Talos problem?"]
+    jessica.target_x = 32
+    jessica.target_y = 16
+    sim = Simulation(people=[jessica], floorplan=make_floorplan(), interactions=[])
+
+    sim._tick_walking(jessica, dt=1.0, now=1.0)
+
+    assert jessica.state == "at_desk"
+    assert jessica.current_phrase == "Is this a Talos problem?"
+
+
+def test_idle_phrase_selection_uses_configured_weights():
+    class WeightedPhraseRng:
+        def choices(self, population, weights, k):
+            assert weights == [3, 1, 1]
+            assert k == 1
+            return [population[0]]
+
+    jessica = make_person("Jessica", 16, 16)
+    jessica.idle_phrases = ["Talos?", "Questions.", "Documented."]
+    jessica.idle_phrase_weights = [3, 1, 1]
+    sim = Simulation(
+        people=[jessica],
+        floorplan=make_floorplan(),
+        interactions=[],
+        rng=WeightedPhraseRng(),
+    )
+
+    assert sim._choose_idle_phrase(jessica) == "Talos?"
+
+
+def test_visitor_does_not_assign_a_desk_to_deskless_person():
+    jessica = make_person("Jessica", 16, 16)
+    jessica.desk = None
+    sim = Simulation(people=[jessica], floorplan=make_floorplan(), interactions=[])
+
+    sim._send_everyone_to_desk(now=0.0)
+
+    assert jessica.state == "at_desk"
+    assert jessica.target_x is None
+    assert jessica.target_y is None
+
+
 def test_walk_target_tiles_exclude_the_outer_border():
     # a person idling on the outermost ring of tiles would render with
     # their sprite (wider than half a tile) or speech bubble partly off
@@ -323,6 +369,8 @@ def test_visitor_full_lifecycle_freezes_and_releases_people():
     assert any(p["name"] == "Ghost" for p in sim.to_state()["people"])
     flags = {p["name"]: p["visitor"] for p in sim.to_state()["people"]}
     assert flags == {"A": False, "Ghost": True}
+    ghost = next(p for p in sim.to_state()["people"] if p["name"] == "Ghost")
+    assert ghost["has_desk"] is False
     assert a.state == "running"
 
     # let a walk itself all the way home (many small ticks, real movement)

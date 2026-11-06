@@ -168,6 +168,13 @@ class Simulation:
                 goal_tile = self._pick_walk_target(person, tile_size)
             self._begin_walk_to(person, goal_tile)
 
+    def _choose_idle_phrase(self, person: Person) -> str:
+        if person.idle_phrase_weights is not None:
+            return self.rng.choices(
+                person.idle_phrases, weights=person.idle_phrase_weights, k=1
+            )[0]
+        return self.rng.choice(person.idle_phrases)
+
     def _begin_walk_to(self, person: Person, goal_tile: tuple[int, int]) -> None:
         tile_size = self.floorplan.tile_size
         start_tile = (int(person.x // tile_size), int(person.y // tile_size))
@@ -282,9 +289,13 @@ class Simulation:
             person.path = None
             person.state = "at_desk"
             is_visitor = person is self.visitor
-            phrase_chance = VISITOR_PHRASE_CHANCE if is_visitor else 0.5
+            phrase_chance = (
+                VISITOR_PHRASE_CHANCE
+                if is_visitor
+                else (1.0 if person.desk is None else 0.5)
+            )
             if (is_visitor or not self.visitor_active) and self.rng.random() < phrase_chance:
-                person.current_phrase = self.rng.choice(person.idle_phrases)
+                person.current_phrase = self._choose_idle_phrase(person)
                 person.phrase_expires_at = now + PHRASE_DURATION_SECONDS
         else:
             person.x += dx / dist * step
@@ -308,7 +319,7 @@ class Simulation:
                 is_visitor = person is self.visitor
                 phrase_chance = VISITOR_PHRASE_CHANCE if is_visitor else 0.5
                 if (is_visitor or not self.visitor_active) and self.rng.random() < phrase_chance:
-                    person.current_phrase = self.rng.choice(person.idle_phrases)
+                    person.current_phrase = self._choose_idle_phrase(person)
                     person.phrase_expires_at = now + PHRASE_DURATION_SECONDS
             else:
                 person.x += dx / dist * step
@@ -438,6 +449,12 @@ class Simulation:
             person.phrase_expires_at = None
             self._talk_until.pop(person.name, None)
             self._idle_until.pop(person.name, None)
+            if person.desk is None:
+                person.target_x = None
+                person.target_y = None
+                person.path = None
+                person.state = "at_desk"
+                continue
             desk_obj = desks[person.desk]
             self._begin_run_to(person, self.floorplan.desk_seat_tile(desk_obj))
 
@@ -471,6 +488,7 @@ class Simulation:
             "state": p.state,
             "sprite": p.sprite,
             "phrase": p.current_phrase,
+            "has_desk": p is not self.visitor and p.desk is not None,
             # The visitor reuses "at_desk" for his short pauses but never
             # sits, so the client must not apply the seated sprite offset.
             "visitor": p is self.visitor,

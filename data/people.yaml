@@ -104,3 +104,12 @@ people:
     desk: 20
     idle_phrases:
       - "Low Risk Appetite"
+  - name: Jessica
+    sprite: jessica.png
+    desk: null
+    spawn_tile: [1, 22]
+    idle_phrases:
+      - "Is this a Talos problem?"
+      - "I have questions, friends."
+      - "I’m sure this is documented somewhere."
+    idle_phrase_weights: [3, 1, 1]
